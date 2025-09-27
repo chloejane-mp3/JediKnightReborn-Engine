@@ -21,6 +21,8 @@
 #define ITEM_TYPE_MULTI			12        // multiple list setting, enumerated
 #define ITEM_TYPE_BIND			13		  // multiple list setting, enumerated
 #define ITEM_TYPE_TEXTSCROLL	14		  // scrolls text
+#define	ITEM_TYPE_MULTIB		15		  // multib, but backwards
+#define ITEM_TYPE_MULTISETTINGS 16        // multi for settings, right aligned
 
 #define ITEM_ALIGN_LEFT 0                 // left alignment
 #define ITEM_ALIGN_CENTER 1               // center alignment

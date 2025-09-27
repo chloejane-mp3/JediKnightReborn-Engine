@@ -35,6 +35,8 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #define ITEM_TYPE_MULTI				12		// multiple list setting, enumerated
 #define ITEM_TYPE_BIND				13		// multiple list setting, enumerated
 #define ITEM_TYPE_TEXTSCROLL		14		// scrolling text
+#define	ITEM_TYPE_MULTIB			15		// multi, but backwards
+#define ITEM_TYPE_MULTISETTINGS     16      // multi specifically for settings, right-aligned
 
 
 #define ITEM_ALIGN_LEFT 0                 // left alignment

@@ -176,6 +176,8 @@ const char *types [] = {
 "ITEM_TYPE_MULTI",
 "ITEM_TYPE_BIND",
 "ITEM_TYPE_TEXTSCROLL",
+"ITEM_TYPE_MULTIB",
+"ITEM_TYPE_MULTISETTINGS",
 NULL
 };
 
@@ -2972,7 +2974,7 @@ commandDef_t commandList[] =
   {"delay",			&Script_Delay},					// works on this (script)
   {"transition3",   &Script_Transition3},			// model exclusive transition
   {"incrementfeeder", &Script_IncrementFeeder},
-  {"decrementfeeder", &Script_DecrementFeeder}
+  {"decrementfeeder", &Script_DecrementFeeder},
 };
 
 int scriptCommandCount = sizeof(commandList) / sizeof(commandDef_t);
@@ -3043,6 +3045,68 @@ const char *Item_Multi_Setting(itemDef_t *item)
  				}
  			}
  		}
+	}
+
+#ifdef JK2_MODE
+	return "@MENUS1_CUSTOM";
+#else
+	return "@MENUS_CUSTOM";
+#endif
+}
+
+/*
+===============
+Item_Multib_Setting
+===============
+*/
+const char* Item_Multib_Setting(itemDef_t* item)
+{
+	char buff[1024];
+	float value = 0;
+	int i;
+	multiDef_t* multiPtr = (multiDef_t*)item->typeData;
+	if (multiPtr)
+	{
+		if (multiPtr->strDef)
+		{
+			if (item->cvar)
+			{
+				DC->getCVarString(item->cvar, buff, sizeof(buff));
+			}
+			else
+			{
+
+			}
+		}
+		else
+		{
+			if (item->cvar)	// Was a cvar given?
+			{
+				value = DC->getCVarValue(item->cvar);
+			}
+			else
+			{
+				value = item->value;
+			}
+		}
+
+		for (i = 0; i < multiPtr->count; i++)
+		{
+			if (multiPtr->strDef)
+			{
+				if (Q_stricmp(buff, multiPtr->cvarStr[i]) == 0)
+				{
+					return multiPtr->cvarList[i];
+				}
+			}
+			else
+			{
+				if (multiPtr->cvarValue[i] == value)
+				{
+					return multiPtr->cvarList[i];
+				}
+			}
+		}
 	}
 
 #ifdef JK2_MODE
@@ -3618,6 +3682,7 @@ qboolean ItemParse_scrollhidden( itemDef_t *item )
 		listPtr->scrollhidden = qtrue;
 	}
 	return qtrue;
+	
 }
 
 
@@ -4834,6 +4899,14 @@ void Item_ValidateTypeData(itemDef_t *item)
 	else if (item->type == ITEM_TYPE_TEXTSCROLL )
 	{
 		item->typeData = UI_Alloc(sizeof(textScrollDef_t));
+	}
+	else if (item->type == ITEM_TYPE_MULTIB)
+	{
+		item->typeData = UI_Alloc(sizeof(multiDef_t));
+	}
+	else if (item->type == ITEM_TYPE_MULTISETTINGS)
+	{
+		item->typeData = UI_Alloc(sizeof(multiDef_t));
 	}
 }
 
@@ -6654,12 +6727,13 @@ void Item_ListBox_Paint(itemDef_t *item)
 			{
 				x = item->window.rect.x + 1;
 				y = item->window.rect.y + item->window.rect.h - SCROLLBAR_SIZE - 1;
-				DC->drawHandlePic(x, y, SCROLLBAR_SIZE, SCROLLBAR_SIZE, DC->Assets.scrollBarArrowLeft);
+				DC->drawHandlePic(x, y - 7, SCROLLBAR_SIZE, SCROLLBAR_SIZE + 7, DC->Assets.scrollBarArrowLeft);
 				x += SCROLLBAR_SIZE - 1;
-				size = item->window.rect.w - (SCROLLBAR_SIZE * 2);
+				size = item->window.rect.w - (SCROLLBAR_SIZE * 2.5);
 				DC->drawHandlePic(x, y, size+1, SCROLLBAR_SIZE, DC->Assets.scrollBar);
 				x += size - 1;
-				DC->drawHandlePic(x, y, SCROLLBAR_SIZE, SCROLLBAR_SIZE, DC->Assets.scrollBarArrowRight);
+				DC->drawHandlePic(x, y - 7, SCROLLBAR_SIZE, SCROLLBAR_SIZE + 7, DC->Assets.scrollBarArrowRight);
+
 				// thumb
 				thumb = Item_ListBox_ThumbDrawPosition(item);//Item_ListBox_ThumbPosition(item);
 				if (thumb > x - SCROLLBAR_SIZE - 1)
@@ -6667,12 +6741,29 @@ void Item_ListBox_Paint(itemDef_t *item)
 					thumb = x - SCROLLBAR_SIZE - 1;
 				}
 				DC->drawHandlePic(thumb, y, SCROLLBAR_SIZE, SCROLLBAR_SIZE, DC->Assets.scrollBarThumb);
+
 			}
+
 			else if (listPtr->startPos > 0)
 			{
+				Cvar_Set ("ui_scrollhidden", "1");
 				listPtr->startPos = 0;
 			}
+
+			if (Item_ListBox_MaxScroll(item) > 0)
+			{
+				Cvar_Set ("ui_scrollhidden", "0");
+			}
+
+			else
+			{
+				Cvar_Set ("ui_scrollhidden", "1");
+			}
+
 		}
+
+
+
 //JLF end
 		//
 		listPtr->endPos = listPtr->startPos;
@@ -6941,6 +7032,7 @@ void Item_Bind_Paint(itemDef_t *item)
 	float	value,textScale,textWidth;
 	int		maxChars = 0, textHeight,yAdj,startingXPos;
 
+	
 	menuDef_t *parent = (menuDef_t*)item->parent;
 	editFieldDef_t *editPtr = (editFieldDef_t*)item->typeData;
 
@@ -6979,11 +7071,14 @@ void Item_Bind_Paint(itemDef_t *item)
 		Item_Text_Paint(item);
 		BindingFromName(item->cvar);
 
+
 		// If the text runs past the limit bring the scale down until it fits.
 		textScale = item->textscale;
 		textWidth = DC->textWidth(g_nameBind,(float) textScale, uiInfo.uiDC.Assets.qhMediumFont);
 
-		startingXPos = (item->textRect.x + item->textRect.w + 8);
+		
+
+		startingXPos = (item->textRect.x);
 
 		while ((startingXPos + textWidth) >= SCREEN_WIDTH)
 		{
@@ -6999,7 +7094,7 @@ void Item_Bind_Paint(itemDef_t *item)
 			yAdj = textHeight - DC->textHeight(g_nameBind, textScale, uiInfo.uiDC.Assets.qhMediumFont);
 		}
 
-		DC->drawText(startingXPos, item->textRect.y + yAdj, textScale, newColor, g_nameBind, maxChars/*item->textRect.w*/, item->textStyle, item->font);
+		DC->drawText(item->textRect.x + item->textRect.w - textWidth + item->window.rect.w, item->textRect.y + yAdj, textScale, newColor, g_nameBind, maxChars/*item->textRect.w*/, item->textStyle, item->font);
 	}
 	else
 	{
@@ -7471,9 +7566,15 @@ void Item_OwnerDraw_Paint(itemDef_t *item)
 void Item_YesNo_Paint(itemDef_t *item)
 {
 	vec4_t color;
-	float value;
+	float value,textScale,textWidth;
+	
 
 	value = (item->cvar) ? DC->getCVarValue(item->cvar) : 0;
+	textScale = item->textscale;
+	
+
+
+	
 
 #ifdef JK2_MODE
 	const char *psYes = ui.SP_GetStringTextString( "MENUS0_YES" );
@@ -7493,7 +7594,10 @@ void Item_YesNo_Paint(itemDef_t *item)
 	if (item->text)
 	{
 		Item_Text_Paint(item);
-		DC->drawText(item->textRect.x + item->textRect.w + 8, item->textRect.y, item->textscale, color, yesnovalue, 0, item->textStyle, item->font);
+
+		textWidth = DC->textWidth(yesnovalue, textScale, uiInfo.uiDC.Assets.qhMediumFont);
+
+		DC->drawText(item->textRect.x + item->textRect.w - textWidth + item->window.rect.w, item->textRect.y, item->textscale, color, yesnovalue, 0, item->textStyle, item->font);
 	}
 	else
 	{
@@ -7692,6 +7796,70 @@ int Item_ListBox_ThumbDrawPosition(itemDef_t *item)
 
 /*
 =================
+Item_Multib_Paint
+=================
+*/
+void Item_Multib_Paint(itemDef_t* item)
+{
+	vec4_t color;
+	const char* text = "";
+	int height, width;
+
+	text = Item_Multi_Setting(item);
+	if (*text == '@')	// string reference
+	{
+		text = SE_GetString(&text[1]);
+	}
+
+	Item_SetTextExtents(item, &width, &height, text);
+
+	Item_TextColor(item, &color);
+	if (item->text)
+	{
+		Item_Text_Paint(item);
+		DC->drawText(item->textRect.x - width / 2, item->textRect.y, item->textscale, color, text, 0, item->textStyle, item->font);
+	}
+	else
+	{
+		//JLF added xoffset
+		DC->drawText(item->textRect.x, item->textRect.y, item->textscale, color, text, 0, item->textStyle, item->font);
+	}
+}
+
+/*
+=================
+Item_MultiSettings_Paint
+=================
+*/
+void Item_MultiSettings_Paint(itemDef_t* item)
+{
+	vec4_t color;
+	const char* text = "";
+	int height, width;
+
+	text = Item_Multi_Setting(item);
+	if (*text == '@')	// string reference
+	{
+		text = SE_GetString(&text[1]);
+	}
+
+	Item_SetTextExtents(item, &width, &height, text);
+
+	Item_TextColor(item, &color);
+	if (item->text)
+	{
+		Item_Text_Paint(item);
+		DC->drawText(item->textRect.x + item->textRect.w + item->window.rect.w - width, item->textRect.y, item->textscale, color, text, 0, item->textStyle, item->font);
+	}
+	else
+	{
+		//JLF added xoffset
+		DC->drawText(item->textRect.x, item->textRect.y, item->textscale, color, text, 0, item->textStyle, item->font);
+	}
+}
+
+/*
+=================
 Item_Slider_ThumbPosition
 =================
 */
@@ -7771,11 +7939,11 @@ void Item_Slider_Paint(itemDef_t *item)
 		x = item->window.rect.x;
 	}
 	DC->setColor(newColor);
-	DC->drawHandlePic( x, y+2, SLIDER_WIDTH, SLIDER_HEIGHT, DC->Assets.sliderBar );
+	DC->drawHandlePic( x + item->window.rect.w - SLIDER_WIDTH - 6, y + 2, SLIDER_WIDTH + 10, SLIDER_HEIGHT, DC->Assets.sliderBar );
 
 	x = Item_Slider_ThumbPosition(item);
 //	DC->drawHandlePic( x - (SLIDER_THUMB_WIDTH / 2), y - 2, SLIDER_THUMB_WIDTH, SLIDER_THUMB_HEIGHT, DC->Assets.sliderThumb );
-	DC->drawHandlePic( x - (SLIDER_THUMB_WIDTH / 2), y+2, SLIDER_THUMB_WIDTH, SLIDER_THUMB_HEIGHT, DC->Assets.sliderThumb );
+	DC->drawHandlePic( x - (SLIDER_THUMB_WIDTH / 2) + item->window.rect.w - SLIDER_WIDTH, y+2, SLIDER_THUMB_WIDTH, SLIDER_THUMB_HEIGHT, DC->Assets.sliderThumb );
 
 }
 
@@ -8381,6 +8549,12 @@ static qboolean Item_Paint(itemDef_t *item, qboolean bDraw)
 			break;
 		case ITEM_TYPE_SLIDER:
 			Item_Slider_Paint(item);
+			break;
+		case ITEM_TYPE_MULTIB:
+			Item_Multib_Paint(item);
+			break;
+		case ITEM_TYPE_MULTISETTINGS:
+			Item_MultiSettings_Paint(item);
 			break;
 		default:
 			break;
@@ -10804,12 +10978,69 @@ int Item_Multi_FindCvarByValue(itemDef_t *item)
 
 /*
 =================
+Item_Multib_FindCvarByValue
+=================
+*/
+int Item_Multib_FindCvarByValue(itemDef_t* item)
+{
+	char buff[1024];
+	float value = 0;
+	int i;
+	multiDef_t* multiPtr = (multiDef_t*)item->typeData;
+	if (multiPtr)
+	{
+		if (multiPtr->strDef)
+		{
+			DC->getCVarString(item->cvar, buff, sizeof(buff));
+		}
+		else
+		{
+			value = DC->getCVarValue(item->cvar);
+		}
+		for (i = 0; i < multiPtr->count; i++)
+		{
+			if (multiPtr->strDef)
+			{
+				if (Q_stricmp(buff, multiPtr->cvarStr[i]) == 0)
+				{
+					return i;
+				}
+			}
+			else
+			{
+				if (multiPtr->cvarValue[i] == value)
+				{
+					return i;
+				}
+			}
+		}
+	}
+	return 0;
+}
+
+/*
+=================
 Item_Multi_CountSettings
 =================
 */
 int Item_Multi_CountSettings(itemDef_t *item)
 {
 	multiDef_t *multiPtr = (multiDef_t*)item->typeData;
+	if (multiPtr == NULL)
+	{
+		return 0;
+	}
+	return multiPtr->count;
+}
+
+/*
+=================
+Item_Multib_CountSettings
+=================
+*/
+int Item_Multib_CountSettings(itemDef_t* item)
+{
+	multiDef_t* multiPtr = (multiDef_t*)item->typeData;
 	if (multiPtr == NULL)
 	{
 		return 0;
@@ -10964,6 +11195,99 @@ qboolean Item_Multi_HandleKey(itemDef_t *item, int key)
 
 /*
 =================
+Item_Multib_HandleKey
+=================
+*/
+qboolean Item_Multib_HandleKey(itemDef_t* item, int key)
+{
+	multiDef_t* multiPtr = (multiDef_t*)item->typeData;
+	if (multiPtr)
+	{
+		if (Rect_ContainsPoint(&item->window.rect, DC->cursorx, DC->cursory) && item->window.flags & WINDOW_HASFOCUS)
+		{
+			//Raz: Scroll on multi buttons!
+			if (key == A_MOUSE1 || key == A_ENTER || key == A_MOUSE2 || key == A_MOUSE3 || key == A_MWHEELDOWN || key == A_MWHEELUP)
+				//if (key == A_MOUSE1 || key == A_ENTER || key == A_MOUSE2 || key == A_MOUSE3)
+			{
+				if (item->cvar)
+				{
+					int current = Item_Multib_FindCvarByValue(item);
+					int max = Item_Multib_CountSettings(item);
+
+					if (key == A_MOUSE1 || key == A_MWHEELDOWN)
+					{
+						current--;
+						if (current < 0)
+						{
+							current = max - 1;
+						}
+					}
+					else
+					{
+						current++;
+						if (current >= max)
+						{
+							current = 0;
+						}
+					}
+
+					if (multiPtr->strDef)
+					{
+						DC->setCVar(item->cvar, multiPtr->cvarStr[current]);
+					}
+					else
+					{
+						float value = multiPtr->cvarValue[current];
+						if (((float)((int)value)) == value)
+						{
+							DC->setCVar(item->cvar, va("%i", (int)value));
+						}
+						else
+						{
+							DC->setCVar(item->cvar, va("%f", value));
+						}
+					}
+					if (item->special)
+					{//its a feeder?
+						DC->feederSelection(item->special, current, item);
+					}
+				}
+				else
+				{
+					int max = Item_Multi_CountSettings(item);
+
+					if (key == A_MOUSE1 || key == A_MWHEELDOWN)
+					{
+						item->value--;
+						if (item->value < 0)
+						{
+							item->value = max;
+						}
+					}
+					else
+					{
+						item->value++;
+						if (item->value >= max)
+						{
+							item->value = 0;
+						}
+					}
+					if (item->special)
+					{//its a feeder?
+						DC->feederSelection(item->special, item->value, item);
+					}
+				}
+
+				return qtrue;
+			}
+		}
+	}
+	return qfalse;
+}
+
+
+/*
+=================
 Item_Slider_HandleKey
 =================
 */
@@ -11086,6 +11410,12 @@ qboolean Item_HandleKey(itemDef_t *item, int key, qboolean down)
 			break;
 		case ITEM_TYPE_SLIDER:
 			return Item_Slider_HandleKey(item, key, down);
+			break;
+		case ITEM_TYPE_MULTIB:
+			return Item_Multib_HandleKey(item, key);
+			break;
+		case ITEM_TYPE_MULTISETTINGS:
+			return Item_Multi_HandleKey(item, key);
 			break;
 //JLF MPMOVED
 		case ITEM_TYPE_TEXT:
@@ -11380,7 +11710,7 @@ void Menu_HandleKey(menuDef_t *menu, int key, qboolean down)
 	should just process the action and not support the accept functionality.
 */
 //JLFACCEPT
-				else if ( item->type == ITEM_TYPE_MULTI || item->type == ITEM_TYPE_YESNO || item->type == ITEM_TYPE_SLIDER)
+				else if ( item->type == ITEM_TYPE_MULTI || item->type == ITEM_TYPE_YESNO || item->type == ITEM_TYPE_SLIDER || item->type == ITEM_TYPE_MULTIB || item->type == ITEM_TYPE_MULTISETTINGS)
 				{
 
 					if (Item_HandleAccept(item))

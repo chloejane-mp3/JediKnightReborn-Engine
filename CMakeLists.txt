@@ -41,7 +41,7 @@ option(BuildMPCGame "Whether to create projects for the MP clientside gamecode (
 option(BuildMPUI "Whether to create projects for the MP UI code (uix86.dll)" ON)
 option(BuildMPRend2 "Whether to create projects for the EXPERIMENTAL MP rend2 renderer (rd-rend2_x86.dll)" ON)
 
-option(BuildSPEngine "Whether to create projects for the SP engine (openjk_sp.exe)" ON)
+option(BuildSPEngine "Whether to create projects for the SP engine (jediknightreborn.exe)" ON)
 option(BuildSPGame "Whether to create projects for the SP gamecode (jagamex86.dll)" ON)
 option(BuildSPRdVanilla "Whether to create projects for the SP default renderer (rdsp-vanilla_x86.dll)" ON)
 option(BuildSPRend2 "Whether to create projects for the EXPERIMENTAL SP rend2 renderer (rdsp-rend2_x86.dll)" ON)
@@ -161,7 +161,7 @@ endif()
 # Binary names
 #
 #=============================================================================
-set(SPEngine "openjk_sp.${Architecture}")
+set(SPEngine "jediknightreborn.${Architecture}")
 set(SPGame "jagame${Architecture}")
 set(SPRDVanillaRenderer "rdsp-vanilla_${Architecture}")
 set(SPRend2 "rdsp-rend2_${Architecture}")

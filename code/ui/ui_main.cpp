@@ -405,6 +405,7 @@ vmCvar_t	ui_char_color_green;
 vmCvar_t	ui_char_color_blue;
 vmCvar_t	ui_PrecacheModels;
 vmCvar_t	ui_screenshotType;
+vmCvar_t	ui_scrollhidden;
 
 static void UI_UpdateScreenshot( void )
 {
@@ -448,7 +449,7 @@ static cvarTable_t cvarTable[] =
 	{ &ui_hudFiles,				"cg_hudFiles",			"ui/jahud.txt", NULL, CVAR_ARCHIVE},
 #endif
 
-	{ &ui_char_anim,			"ui_char_anim",			"BOTH_WALK1", NULL, 0},
+	{ &ui_char_anim,			"ui_char_anim",			"", NULL, 0},
 
 	{ &ui_char_model,			"ui_char_model",		"", NULL, 0},	//these are filled in by the "g_*" versions on load
 	{ &ui_char_skin_head,		"ui_char_skin_head",	"", NULL, 0},	//the "g_*" versions are initialized in UI_Init, ui_atoms.cpp
@@ -467,7 +468,9 @@ static cvarTable_t cvarTable[] =
 
 	{ &ui_PrecacheModels,		"ui_PrecacheModels",	"1", NULL, CVAR_ARCHIVE},
 
-	{ &ui_screenshotType,		"ui_screenshotType",	"jpg", UI_UpdateScreenshot, CVAR_ARCHIVE }
+	{ &ui_screenshotType,		"ui_screenshotType",	"jpg", UI_UpdateScreenshot, CVAR_ARCHIVE },
+
+	{ &ui_scrollhidden,			"ui_scrollhidden",		"1", NULL, 0},
 };
 
 #define FP_UPDATED_NONE -1
@@ -3585,6 +3588,7 @@ static void UI_Update(const char *name)
 #define ASSET_SCROLLBAR_ARROWLEFT   "gfx/menus/scrollbar_arrow_left.tga"
 #define ASSET_SCROLLBAR_ARROWRIGHT  "gfx/menus/scrollbar_arrow_right.tga"
 #define ASSET_SCROLL_THUMB          "gfx/menus/scrollbar_thumb.tga"
+#define ASSET_SCROLL_THUMB_HOR      "gfx/menus/scrollbar_thumb_horizontal.jpg"
 
 
 /*
@@ -5018,7 +5022,7 @@ static void UI_DecrementCurrentForcePower ( void )
 	menuDef_t	*menu;
 	itemDef_t	*item;
 	short i;
-	vec4_t color = { 0.65f, 0.65f, 0.65f, 1.0f};
+	vec4_t color = { 1.0f, 1.0f, 1.0f, 1.0f};
 	char itemName[128];
 
 	menu = Menu_GetFocused();	// Get current menu
@@ -5177,7 +5181,7 @@ static void UI_AffectForcePowerLevel ( const char *forceName )
 	// A field was updated, so make it so others can't be
 	if (uiInfo.forcePowerUpdated>FP_UPDATED_NONE)
 	{
-		vec4_t color = { 0.25f, 0.25f, 0.25f, 1.0f};
+		vec4_t color = { 1.0f, 1.0f, 1.0f, 1.0f};
 		char itemName[128];
 
 		// Make it so none of the other buttons can be clicked
