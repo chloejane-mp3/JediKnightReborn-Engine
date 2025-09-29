@@ -270,13 +270,10 @@ void CG_DrawDataPadObjectives(const centity_t *cent )
 
 	// Title Text at the top
 	char text[1024]={0};
-	cgi_SP_GetStringTextString( "SP_INGAME_OBJECTIVES", text, sizeof(text) );
-	cgi_R_Font_DrawString (titleXPos, titleYPos, text, colorTable[CT_TITLE], cgs.media.qhFontMedium, -1, 1.0f);
-
 	int missionYcnt = 0;
 
 	// Print all active objectives
-	for (i=0;i<MAX_OBJECTIVES;i++)
+		for (i=0;i<MAX_OBJECTIVES;i++)
 	{
 		// Is there an objective to see?
 		if (cent->gent->client->sess.mission_objectives[i].display)
