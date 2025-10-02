@@ -28,7 +28,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 
 
 // For printing objectives
-static const short objectiveStartingYpos = 75;		// Y starting position for objective text
+static const short objectiveStartingYpos = 295;		// Y starting position for objective text
 static const short objectiveStartingXpos = 60;		// X starting position for objective text
 static const int objectiveTextBoxWidth = 500;		// Width (in pixels) of text box
 static const int objectiveTextBoxHeight = 300;		// Height (in pixels) of text box
@@ -282,11 +282,16 @@ void CG_DrawDataPadObjectives(const centity_t *cent )
 			totalY = objectiveStartingYpos + (iYPixelsPerLine * (missionYcnt))+(iYPixelsPerLine/2);
 
 			//	Draw graphics that show if mission has been accomplished or not
-			cgi_R_SetColor(colorTable[CT_BLUE3]);
-			CG_DrawPic( (graphicXpos),   (totalY-graphicYOffset),   graphic_size,  graphic_size, cgs.media.messageObjCircle);	// Circle in front
+			
+			
 			if (cent->gent->client->sess.mission_objectives[i].status == OBJECTIVE_STAT_SUCCEEDED)
 			{
 				CG_DrawPic( (graphicXpos),   (totalY-graphicYOffset),   graphic_size,  graphic_size, cgs.media.messageLitOn);	// Center Dot
+			}
+
+			else
+			{
+				CG_DrawPic((graphicXpos), (totalY - graphicYOffset), graphic_size, graphic_size, cgs.media.messageObjCircle);	// Circle in front
 			}
 
 			// Print current objective text
