@@ -28,7 +28,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 
 
 // For printing objectives
-static const short objectiveStartingYpos = 295;		// Y starting position for objective text
+static const short objectiveStartingYpos = 95;		// Y starting position for objective text
 static const short objectiveStartingXpos = 60;		// X starting position for objective text
 static const int objectiveTextBoxWidth = 500;		// Width (in pixels) of text box
 static const int objectiveTextBoxHeight = 300;		// Height (in pixels) of text box
@@ -62,7 +62,7 @@ ObjectivePrint_Line
 Print a single mission objective
 ====================
 */
-static void ObjectivePrint_Line(const int color, const int objectIndex, int &missionYcnt)
+static void ObjectivePrint_Line(const int color, const int objectIndex, int &missionYcnt, const float fontScale = 0.85f)
 {
 	char *str,*strBegin;
 	int y,pixelLen,charLen,i;
@@ -98,7 +98,7 @@ static void ObjectivePrint_Line(const int color, const int objectIndex, int &mis
 		// this is execrable, and should NOT have had to've been done now, but...
 		//
 		extern const char *CG_DisplayBoxedText(	int iBoxX, int iBoxY, int iBoxWidth, int iBoxHeight,
-												const char *psText, int iFontHandle, float fScale,
+												const char *psText, int iFontHandle, float fontScale,
 												const vec4_t v4Color);
 		extern int giLinesOutput;
 		extern float gfAdvanceHack;
@@ -122,7 +122,7 @@ static void ObjectivePrint_Line(const int color, const int objectIndex, int &mis
 			objectiveTextBoxHeight,
 			finalText,	// int iBoxX, int iBoxY, int iBoxWidth, int iBoxHeight, const char *psText
 			cgs.media.qhFontMedium,		// int iFontHandle,
-			1.0f,						// float fScale,
+			fontScale,						// float fScale,
 			colorTable[color]			// const vec4_t v4Color
 			);
 
@@ -144,7 +144,7 @@ static void ObjectivePrint_Line(const int color, const int objectIndex, int &mis
 				colorTable[color],
 				cgs.media.qhFontMedium,
 				-1,
-				1.0f);
+				fontScale);
 
 			++missionYcnt;
 		}
@@ -251,6 +251,7 @@ Draw routine for the objective info screen of the data pad.
 void CG_DrawDataPadObjectives(const centity_t *cent )
 {
 	int		i,totalY;
+	float	fontScale = 0.85f;
 	int		iYPixelsPerLine = cgi_R_Font_HeightPixels(cgs.media.qhFontMedium, 1.0f);
 
 	const short titleXPos = objectiveStartingXpos - 22;		// X starting position for title text
@@ -286,16 +287,16 @@ void CG_DrawDataPadObjectives(const centity_t *cent )
 			
 			if (cent->gent->client->sess.mission_objectives[i].status == OBJECTIVE_STAT_SUCCEEDED)
 			{
-				CG_DrawPic( (graphicXpos),   (totalY-graphicYOffset),   graphic_size,  graphic_size, cgs.media.messageLitOn);	// Center Dot
+				CG_DrawPic( (graphicXpos),   (totalY - 2),   graphic_size,  graphic_size, cgs.media.messageLitOn);	// Center Dot
 			}
 
 			else
 			{
-				CG_DrawPic((graphicXpos), (totalY - graphicYOffset), graphic_size, graphic_size, cgs.media.messageObjCircle);	// Circle in front
+				CG_DrawPic((graphicXpos), (totalY - 2), graphic_size, graphic_size, cgs.media.messageObjCircle);	// Circle in front
 			}
 
 			// Print current objective text
-			ObjectivePrint_Line(CT_WHITE, i, missionYcnt );
+			ObjectivePrint_Line(CT_WHITE, i, missionYcnt, fontScale );
 		}
 	}
 
@@ -315,7 +316,7 @@ void CG_DrawDataPadObjectives(const centity_t *cent )
 			colorTable[CT_WHITE],
 			cgs.media.qhFontMedium,
 			-1,
-			1.0f);
+			fontScale);
 	}
 }
 
