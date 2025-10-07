@@ -28,9 +28,9 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 
 
 // For printing objectives
-static const short objectiveStartingYpos = 95;		// Y starting position for objective text
+static const short objectiveStartingYpos = 125;		// Y starting position for objective text
 static const short objectiveStartingXpos = 60;		// X starting position for objective text
-static const int objectiveTextBoxWidth = 500;		// Width (in pixels) of text box
+static const int objectiveTextBoxWidth = 700;		// Width (in pixels) of text box
 static const int objectiveTextBoxHeight = 300;		// Height (in pixels) of text box
 
 const char *showLoadPowersName[] =
@@ -71,7 +71,7 @@ static void ObjectivePrint_Line(const int color, const int objectIndex, int &mis
 	char finalText[2048];
 	qhandle_t	graphic;
 
-	int iYPixelsPerLine = cgi_R_Font_HeightPixels(cgs.media.qhFontMedium, 1.0f);
+	int iYPixelsPerLine = cgi_R_Font_HeightPixels(cgs.media.qhFontMedium, fontScale);
 
 	cgi_SP_GetStringTextString( va("OBJECTIVES_%s",objectiveTable[objectIndex].name) , finalText, sizeof(finalText) );
 
@@ -135,7 +135,7 @@ static void ObjectivePrint_Line(const int color, const int objectIndex, int &mis
 		//
 		if (pixelLen < objectiveTextBoxWidth)	// One shot - small enough to print entirely on one line
 		{
-			y =objectiveStartingYpos + (iYPixelsPerLine * (missionYcnt));
+			y =objectiveStartingYpos + ((iYPixelsPerLine) * (missionYcnt));
 
 			cgi_R_Font_DrawString (
 				objectiveStartingXpos,
@@ -187,7 +187,7 @@ static void ObjectivePrint_Line(const int color, const int objectIndex, int &mis
 					pixelLen = 0;
 					charLen = 1;
 
-					y = objectiveStartingYpos + (iYPixelsPerLine * missionYcnt);
+					y = objectiveStartingYpos + ((iYPixelsPerLine) * missionYcnt);
 
 					CG_DrawProportionalString(
 						objectiveStartingXpos,
@@ -252,13 +252,13 @@ void CG_DrawDataPadObjectives(const centity_t *cent )
 {
 	int		i,totalY;
 	float	fontScale = 0.85f;
-	int		iYPixelsPerLine = cgi_R_Font_HeightPixels(cgs.media.qhFontMedium, 1.0f);
+	int		iYPixelsPerLine = cgi_R_Font_HeightPixels(cgs.media.qhFontMedium, fontScale);
 
 	const short titleXPos = objectiveStartingXpos - 22;		// X starting position for title text
 	const short titleYPos = objectiveStartingYpos - 23;		// Y starting position for title text
 	const short graphic_size = 16;							// Size (width and height) of graphic used to show status of objective
 	const short graphicXpos = objectiveStartingXpos - graphic_size - 8;	// Amount of X to backup from text starting position
-	const short graphicYOffset = (iYPixelsPerLine - graphic_size)/2;	// Amount of Y to raise graphic so it's in the center of the text line
+	const short graphicYOffset = ((iYPixelsPerLine - graphic_size)/2);	// Amount of Y to raise graphic so it's in the center of the text line
 
 	missionInfo_Updated = qfalse;		// This will stop the text from flashing
 	cg.missionInfoFlashTime = 0;
@@ -282,21 +282,23 @@ void CG_DrawDataPadObjectives(const centity_t *cent )
 			// Calculate the Y position
 			totalY = objectiveStartingYpos + (iYPixelsPerLine * (missionYcnt))+(iYPixelsPerLine/2);
 
+
+			// Print current objective text
+			ObjectivePrint_Line(CT_WHITE, i, missionYcnt, fontScale);
+
+			++missionYcnt;
+
 			//	Draw graphics that show if mission has been accomplished or not
-			
 			
 			if (cent->gent->client->sess.mission_objectives[i].status == OBJECTIVE_STAT_SUCCEEDED)
 			{
-				CG_DrawPic( (graphicXpos),   (totalY - 2),   graphic_size,  graphic_size, cgs.media.messageLitOn);	// Center Dot
+				CG_DrawPic((graphicXpos), (totalY - 2), graphic_size, graphic_size, cgs.media.messageLitOn);	// Center Dot
 			}
 
 			else
 			{
 				CG_DrawPic((graphicXpos), (totalY - 2), graphic_size, graphic_size, cgs.media.messageObjCircle);	// Circle in front
 			}
-
-			// Print current objective text
-			ObjectivePrint_Line(CT_WHITE, i, missionYcnt, fontScale );
 		}
 	}
 
