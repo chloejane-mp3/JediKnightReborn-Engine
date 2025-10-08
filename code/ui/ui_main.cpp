@@ -1094,6 +1094,13 @@ static qboolean UI_RunMenuScript ( const char **args )
 				Menus_ActivateByName("mainhud");
 			}
 		}
+
+		else if (Q_stricmp(name, "returntopause") == 0)
+		{
+			Menus_CloseAll();
+			UI_SetActiveMenu("ingame", NULL);
+		}
+
 		else if (Q_stricmp(name, "closedatapad") == 0)
 		{
 			trap_Key_SetCatcher( trap_Key_GetCatcher() & ~KEYCATCH_UI );
