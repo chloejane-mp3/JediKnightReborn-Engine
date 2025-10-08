@@ -62,7 +62,7 @@ ObjectivePrint_Line
 Print a single mission objective
 ====================
 */
-static void ObjectivePrint_Line(const int color, const int objectIndex, int &missionYcnt, const float fontScale = 0.85f)
+static void ObjectivePrint_Line(const int color, const int objectIndex, int &missionYcnt, const float fontScale = 0.7f)
 {
 	char *str,*strBegin;
 	int y,pixelLen,charLen,i;
@@ -251,7 +251,7 @@ Draw routine for the objective info screen of the data pad.
 void CG_DrawDataPadObjectives(const centity_t *cent )
 {
 	int		i,totalY;
-	float	fontScale = 0.85f;
+	float	fontScale = 0.7f;
 	int		iYPixelsPerLine = cgi_R_Font_HeightPixels(cgs.media.qhFontMedium, fontScale);
 
 	const short titleXPos = objectiveStartingXpos - 22;		// X starting position for title text

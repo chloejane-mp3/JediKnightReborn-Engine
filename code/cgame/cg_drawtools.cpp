@@ -489,6 +489,6 @@ CG_DrawProportionalString
 void CG_DrawProportionalString( int x, int y, const char* str, int style, vec4_t color )
 {
 	//assert(!style);//call this directly if you need style (OR it into the font handle)
-	float fontScale = 0.85f;
+	float fontScale = 0.7f;
 	cgi_R_Font_DrawString (x, y, str, color, cgs.media.qhFontMedium, -1, fontScale);
 }
