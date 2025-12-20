@@ -6817,6 +6817,11 @@ void Item_ListBox_Paint(itemDef_t *item)
 	}
 	else
 	{
+<<<<<<< Updated upstream
+=======
+
+
+>>>>>>> Stashed changes
 //JLF new variable (code idented with if)
 		if (!listPtr->scrollhidden)
 		{
@@ -6874,7 +6879,8 @@ void Item_ListBox_Paint(itemDef_t *item)
 				// fit++;
 			}
 		}
-		else
+
+		else  // Vertical listbox, text style
 		{
 			x = item->window.rect.x + 1;
 			y = item->window.rect.y + 1 - listPtr->elementHeight;
@@ -6883,9 +6889,7 @@ void Item_ListBox_Paint(itemDef_t *item)
 			for (; i < count; i++)
 			{
 				const char *text;
-				// always draw at least one
-				// which may overdraw the box if it is too small for the element
-
+				
 				if (listPtr->numColumns > 0)
 				{
 					int j;
@@ -6899,14 +6903,17 @@ void Item_ListBox_Paint(itemDef_t *item)
 
 						if (optionalImage >= 0)
 						{
-							DC->drawHandlePic(x + 4 + listPtr->columnInfo[j].pos, y - 1 + listPtr->elementHeight / 2, listPtr->columnInfo[j].width, listPtr->columnInfo[j].width, optionalImage);
+							DC->drawHandlePic(x + 4 + listPtr->columnInfo[j].pos, 
+											y - 1 + listPtr->elementHeight / 2, 
+											listPtr->columnInfo[j].width, 
+											listPtr->columnInfo[j].width, 
+											optionalImage);
 						}
 						else if (text)
 						{
 							vec4_t	*color;
 							menuDef_t *parent = (menuDef_t*)item->parent;
 
-							// Use focus color is it has focus.
 							if (i == item->cursorPos)
 							{
 								color = &parent->focusColor;
@@ -6916,17 +6923,21 @@ void Item_ListBox_Paint(itemDef_t *item)
 								color = &item->window.foreColor;
 							}
 
+							int textyOffset = 0;
 
-							int textyOffset;
-							textyOffset = 0;
-
-							DC->drawText(x + 4 + listPtr->columnInfo[j].pos, y + listPtr->elementHeight+ textyOffset, item->textscale, *color, text, listPtr->columnInfo[j].maxChars, item->textStyle, item->font);
+							DC->drawText(x + 4 + listPtr->columnInfo[j].pos, 
+									y + listPtr->elementHeight + textyOffset, 
+									item->textscale, 
+									*color, 
+									text, 
+									listPtr->columnInfo[j].maxChars, 
+									item->textStyle, 
+									item->font);
 						}
 					}
 				}
 				else
 				{
-
 					text = DC->feederItemText(item->special, i, 0, &optionalImage);
 					if (optionalImage >= 0)
 					{
@@ -6934,26 +6945,38 @@ void Item_ListBox_Paint(itemDef_t *item)
 					}
 					else if (text)
 					{
-						DC->drawText(x + 4, y + listPtr->elementHeight, item->textscale, item->window.foreColor, text, 0, item->textStyle, item->font);
+						DC->drawText(x + 4, 
+								y + listPtr->elementHeight, 
+								item->textscale, 
+								item->window.foreColor, 
+								text, 
+								0, 
+								item->textStyle, 
+								item->font);
 					}
-
 				}
 
-				// The chosen text
+				// Highlight box for selected item
 				if (i == item->cursorPos)
 				{
-					DC->fillRect(x + 2, y + listPtr->elementHeight + 2, item->window.rect.w - SCROLLBAR_SIZE - 4, listPtr->elementHeight+2, item->window.outlineColor);
+					DC->fillRect(x + 2, 
+							y + listPtr->elementHeight + 2, 
+							item->window.rect.w - SCROLLBAR_SIZE - 4, 
+							listPtr->elementHeight + 2, 
+							item->window.outlineColor);
 				}
 
-				size -= listPtr->elementHeight;
-				if (size < listPtr->elementHeight)
+				// Size Calculation with Spacing
+				size -= (listPtr->elementHeight + LISTBOX_VERTICAL_LINE_SPACING);
+				if (size < (listPtr->elementHeight + LISTBOX_VERTICAL_LINE_SPACING))
 				{
-					listPtr->drawPadding = listPtr->elementHeight - size;
+					listPtr->drawPadding = (listPtr->elementHeight + LISTBOX_VERTICAL_LINE_SPACING) - size;
 					break;
 				}
 				listPtr->endPos++;
-				y += listPtr->elementHeight;
-				// fit++;
+				
+				// Y position Increments with Spacing
+				y += listPtr->elementHeight + LISTBOX_VERTICAL_LINE_SPACING;
 			}
 		}
 	}
@@ -9085,7 +9108,9 @@ int Item_ListBox_MaxScroll(itemDef_t *item)
 	}
 	else
 	{
-		max = count - (item->window.rect.h / listPtr->elementHeight) + 1;
+		// FIXED: Account for line spacing in max scroll calculation
+		int effectiveHeight = listPtr->elementHeight + LISTBOX_VERTICAL_LINE_SPACING;
+		max = count - (item->window.rect.h / effectiveHeight) + 1;
 	}
 
 	if (max < 0)
@@ -9235,7 +9260,7 @@ void Item_ListBox_MouseEnter(itemDef_t *item, float x, float y)
 	{
 		if (!(item->window.flags & (WINDOW_LB_LEFTARROW | WINDOW_LB_RIGHTARROW | WINDOW_LB_THUMB | WINDOW_LB_PGUP | WINDOW_LB_PGDN)))
 		{
-			// check for selection hit as we have exausted buttons and thumb
+			// check for selection hit as we have exhausted buttons and thumb
 			if (listPtr->elementStyle == LISTBOX_IMAGE)
 			{
 				r.x = item->window.rect.x;
@@ -9265,7 +9290,9 @@ void Item_ListBox_MouseEnter(itemDef_t *item, float x, float y)
 		r.h = item->window.rect.h - listPtr->drawPadding;
 		if (Rect_ContainsPoint(&r, x, y))
 		{
-			listPtr->cursorPos =  (int)((y - 2 - r.y) / listPtr->elementHeight)  + listPtr->startPos;
+			// Account for line spacing in cursor position calculation
+			int effectiveHeight = listPtr->elementHeight + LISTBOX_VERTICAL_LINE_SPACING;
+			listPtr->cursorPos = (int)((y - 2 - r.y) / effectiveHeight) + listPtr->startPos;
 			if (listPtr->cursorPos > listPtr->endPos)
 			{
 				listPtr->cursorPos = listPtr->endPos;
@@ -10441,7 +10468,8 @@ qboolean Item_ListBox_HandleKey(itemDef_t *item, int key, qboolean down, qboolea
 		}
 		else
 		{
-			viewmax = (item->window.rect.h / listPtr->elementHeight);
+			viewmax = (item->window.rect.h / (listPtr->elementHeight + LISTBOX_VERTICAL_LINE_SPACING));
+
 			if ( key == A_CURSOR_UP || key == A_KP_8 )
 			{
 				if (!listPtr->notselectable)

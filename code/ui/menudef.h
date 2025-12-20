@@ -64,6 +64,8 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #define WINDOW_STYLE_TEAMCOLOR 4          // team color
 #define WINDOW_STYLE_CINEMATIC 5          // cinematic
 
+#define LISTBOX_VERTICAL_LINE_SPACING 8    // adds better line height to listboxes
+
 #define MENU_TRUE 1                       // uh.. true
 #define MENU_FALSE 0                      // and false
 
