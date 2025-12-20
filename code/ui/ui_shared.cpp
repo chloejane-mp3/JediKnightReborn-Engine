@@ -6817,27 +6817,47 @@ void Item_ListBox_Paint(itemDef_t *item)
 	}
 	else
 	{
+// In the vertical section (the else block), replace the scrollbar drawing code with this:
+
 //JLF new variable (code idented with if)
 		if (!listPtr->scrollhidden)
 		{
 			// draw scrollbar to right side of the window
-			x = item->window.rect.x + item->window.rect.w - SCROLLBAR_SIZE - 1;
-			y = item->window.rect.y + 1;
-			DC->drawHandlePic(x, y, SCROLLBAR_SIZE, SCROLLBAR_SIZE, DC->Assets.scrollBarArrowUp);
-			y += SCROLLBAR_SIZE - 1;
-
-			listPtr->endPos = listPtr->startPos;
-			size = item->window.rect.h - (SCROLLBAR_SIZE * 2);
-			DC->drawHandlePic(x, y, SCROLLBAR_SIZE, size+1, DC->Assets.scrollBar);
-			y += size - 1;
-			DC->drawHandlePic(x, y, SCROLLBAR_SIZE, SCROLLBAR_SIZE, DC->Assets.scrollBarArrowDown);
-			// thumb
-			thumb = Item_ListBox_ThumbDrawPosition(item);//Item_ListBox_ThumbPosition(item);
-			if (thumb > y - SCROLLBAR_SIZE - 1)
+			// bar
+			if (Item_ListBox_MaxScroll(item) > 0)
 			{
-				thumb = y - SCROLLBAR_SIZE - 1;
+				x = item->window.rect.x + item->window.rect.w - SCROLLBAR_SIZE - 1;
+				y = item->window.rect.y + 1;
+				DC->drawHandlePic(x, y, SCROLLBAR_SIZE, SCROLLBAR_SIZE, DC->Assets.scrollBarArrowUp);
+				y += SCROLLBAR_SIZE - 1;
+
+				listPtr->endPos = listPtr->startPos;
+				size = item->window.rect.h - (SCROLLBAR_SIZE * 2);
+				DC->drawHandlePic(x, y, SCROLLBAR_SIZE, size+1, DC->Assets.scrollBar);
+				y += size - 1;
+				DC->drawHandlePic(x, y, SCROLLBAR_SIZE, SCROLLBAR_SIZE, DC->Assets.scrollBarArrowDown);
+				// thumb
+				thumb = Item_ListBox_ThumbDrawPosition(item);
+				if (thumb > y - SCROLLBAR_SIZE - 1)
+				{
+					thumb = y - SCROLLBAR_SIZE - 1;
+				}
+				DC->drawHandlePic(x, thumb, SCROLLBAR_SIZE, SCROLLBAR_SIZE, DC->Assets.scrollBarThumb);
 			}
-			DC->drawHandlePic(x, thumb, SCROLLBAR_SIZE, SCROLLBAR_SIZE, DC->Assets.scrollBarThumb);
+			else if (listPtr->startPos > 0)
+			{
+				Cvar_Set("ui_scrollhidden", "1");
+				listPtr->startPos = 0;
+			}
+
+			if (Item_ListBox_MaxScroll(item) > 0)
+			{
+				Cvar_Set("ui_scrollhidden", "0");
+			}
+			else
+			{
+				Cvar_Set("ui_scrollhidden", "1");
+			}
 		}
 //JLF end
 		// adjust size for item painting
