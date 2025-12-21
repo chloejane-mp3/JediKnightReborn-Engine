@@ -4159,6 +4159,28 @@ const char *forcepowerLvl3Desc[NUM_FORCE_POWERS] =
 "FORCE_GRIP_LVL3_DESC",
 };
 
+const char *forcepowerName[NUM_FORCE_POWERS] =
+{
+"FORCE_ABSORB_NAME",
+"FORCE_HEAL_NAME",
+"FORCE_PROTECT_NAME",
+"FORCE_MIND_TRICK_NAME",
+
+"FORCE_JUMP_NAME",
+"FORCE_SPEED_NAME",
+"FORCE_PUSH_NAME",
+"FORCE_PULL_NAME",
+"FORCE_SABER_THROW_NAME",
+"FORCE_SABER_DEFENSE_NAME",
+"FORCE_SABER_OFFENSE_NAME",
+"FORCE_SENSE_NAME",
+
+"FORCE_DRAIN_NAME",
+"FORCE_LIGHTNING_NAME",
+"FORCE_RAGE_NAME",
+"FORCE_GRIP_NAME",
+};
+
 /*
 ===================
 CG_DrawDataPadForceSelect
@@ -4168,11 +4190,9 @@ void CG_DrawDataPadForceSelect( void )
 {
 	int		i;
 	int		count;
-	int		holdX;
-	int		sideLeftIconCnt,sideRightIconCnt;
-	int		holdCount,iconCnt;
 	char	text[1024]={0};
 	char	text2[1024]={0};
+	char	textname[1024]={0};
 
 	// count the number of powers known
 	count = 0;
@@ -4196,34 +4216,10 @@ void CG_DrawDataPadForceSelect( void )
 
 	cg.iconSelectTime = cg.forcepowerSelectTime;
 
-	const int sideMax = 3;	// Max number of icons on the side
-
-	// Calculate how many icons will appear to either side of the center one
-	holdCount = count - 1;	// -1 for the center icon
-	if (holdCount == 0)			// No icons to either side
-	{
-		sideLeftIconCnt = 0;
-		sideRightIconCnt = 0;
-	}
-	else if (count > (2*sideMax))	// Go to the max on each side
-	{
-		sideLeftIconCnt = sideMax;
-		sideRightIconCnt = sideMax;
-	}
-	else							// Less than max, so do the calc
-	{
-		sideLeftIconCnt = holdCount/2;
-		sideRightIconCnt = holdCount - sideLeftIconCnt;
-	}
-
-
-	const int smallIconSize = 40;
-	const int bigIconSize = 70;
-	const int bigPad = 64;
-	const int pad = 32;
-
-	const int centerXPos = 320;
-	const int graphicYPos = 340;
+	const int bigiconwidth = 453;
+	const int bigiconheight = 340;
+	const int graphicXPos = 315;
+	const int graphicYPos = 14;
 
 	i = cg.DataPadforcepowerSelect - 1;
 	if (i < 0)
@@ -4231,57 +4227,19 @@ void CG_DrawDataPadForceSelect( void )
 		i = MAX_DPSHOWPOWERS-1;
 	}
 
-	// Print icons to the left of the center
-
-	cgi_R_SetColor(colorTable[CT_WHITE]);
-	// Work backwards from current icon
-	holdX = centerXPos - ((bigIconSize/2) + bigPad + smallIconSize);
-	for (iconCnt=1;iconCnt<(sideLeftIconCnt+1);i--)
-	{
-		if (i < 0)
-		{
-			i = MAX_DPSHOWPOWERS-1;
-		}
-
-		if (!ForcePowerDataPad_Valid(i))	// Does he have this power?
-		{
-			continue;
-		}
-
-		++iconCnt;					// Good icon
-
-		if (force_icons[showDataPadPowers[i]])
-		{
-			CG_DrawPic( holdX, graphicYPos, smallIconSize, smallIconSize, force_icons[showDataPadPowers[i]] );
-		}
-
-		// A new force power
-		if (((cg_updatedDataPadForcePower1.integer - 1) == showDataPadPowers[i]) ||
-			((cg_updatedDataPadForcePower2.integer - 1) == showDataPadPowers[i]) ||
-			((cg_updatedDataPadForcePower3.integer - 1) == showDataPadPowers[i]))
-		{
-			CG_DrawPic( holdX, graphicYPos, smallIconSize, smallIconSize, cgs.media.DPForcePowerOverlay );
-		}
-
-		if (force_icons[showDataPadPowers[i]])
-		{
-			holdX -= (smallIconSize+pad);
-		}
-	}
-
-	// Current Center Icon
+	// Draw Force Icon
 	if (force_icons[showDataPadPowers[cg.DataPadforcepowerSelect]])
 	{
 
 		cgi_R_SetColor(colorTable[CT_WHITE]);
-		CG_DrawPic( centerXPos-(bigIconSize/2), (graphicYPos-((bigIconSize-smallIconSize)/2)), bigIconSize, bigIconSize, force_icons[showDataPadPowers[cg.DataPadforcepowerSelect]] );
+		CG_DrawPic( graphicXPos, graphicYPos, bigiconheight, bigiconwidth, force_icons[showDataPadPowers[cg.DataPadforcepowerSelect]] );
 
 		// New force power
 		if (((cg_updatedDataPadForcePower1.integer - 1) == showDataPadPowers[cg.DataPadforcepowerSelect]) ||
 			((cg_updatedDataPadForcePower2.integer - 1) == showDataPadPowers[cg.DataPadforcepowerSelect]) ||
 			((cg_updatedDataPadForcePower3.integer - 1) == showDataPadPowers[cg.DataPadforcepowerSelect]))
 		{
-			CG_DrawPic( centerXPos-(bigIconSize/2), (graphicYPos-((bigIconSize-smallIconSize)/2)), bigIconSize, bigIconSize, cgs.media.DPForcePowerOverlay );
+			CG_DrawPic( graphicXPos, graphicYPos, bigiconheight, bigiconwidth, cgs.media.DPForcePowerOverlay );
 		}
 	}
 
@@ -4294,42 +4252,9 @@ void CG_DrawDataPadForceSelect( void )
 
 	cgi_R_SetColor(colorTable[CT_WHITE]);
 
-	// Work forwards from current icon
-	holdX = centerXPos + (bigIconSize/2) + bigPad;
-	for (iconCnt=1;iconCnt<(sideRightIconCnt+1);i++)
-	{
-		if (i>=MAX_DPSHOWPOWERS)
-		{
-			i = 0;
-		}
-
-		if (!ForcePowerDataPad_Valid(i))	// Does he have this power?
-		{
-			continue;
-		}
-
-		++iconCnt;					// Good icon
-
-		if (force_icons[showDataPadPowers[i]])
-		{
-			CG_DrawPic( holdX, graphicYPos, smallIconSize, smallIconSize, force_icons[showDataPadPowers[i]] );
-		}
-
-		// A new force power
-		if (((cg_updatedDataPadForcePower1.integer - 1) == showDataPadPowers[i]) ||
-			((cg_updatedDataPadForcePower2.integer - 1) == showDataPadPowers[i]) ||
-			((cg_updatedDataPadForcePower3.integer - 1) == showDataPadPowers[i]))
-		{
-			CG_DrawPic( holdX, graphicYPos, smallIconSize, smallIconSize, cgs.media.DPForcePowerOverlay );
-		}
-
-		if (force_icons[showDataPadPowers[i]])
-		{
-			holdX += (smallIconSize+pad);
-		}
-	}
-
 	cgi_SP_GetStringTextString( va("SP_INGAME_%s",forcepowerDesc[cg.DataPadforcepowerSelect]), text, sizeof(text) );
+
+	cgi_SP_GetStringTextString( va("SP_INGAME_%s", forcepowerName[cg.DataPadforcepowerSelect]), textname, sizeof(textname));
 
 	if (player->client->ps.forcePowerLevel[showDataPadPowers[cg.DataPadforcepowerSelect]]==1)
 	{
@@ -4344,20 +4269,39 @@ void CG_DrawDataPadForceSelect( void )
 		cgi_SP_GetStringTextString( va("SP_INGAME_%s",forcepowerLvl3Desc[cg.DataPadforcepowerSelect]), text2, sizeof(text2) );
 	}
 
-	if (text[0])
+	if (textname[0])
 	{
-		const short textboxXPos = 40;
-		const short textboxYPos = 60;
-		const int	textboxWidth = 560;
-		const int	textboxHeight = 300;
-		const float	textScale = 1.0f;
+		const float textScale = 0.7f;
+		const int font = CG_MagicFontToReal(2);
+		vec4_t color;
+		memcpy(color, colorTable[CT_WHITE], sizeof(vec4_t));
 
-		CG_DisplayBoxedText(textboxXPos,textboxYPos,textboxWidth,textboxHeight,va("%s%s",text,text2),
-													CG_MagicFontToReal(4),
+		int width = cgi_R_Font_StrLenPixels(textname, font, textScale);
+
+		const int centerX = 325;
+		const int textY = 95;
+
+		int textnamePosX = centerX - width / 2;
+
+		cgi_R_Font_DrawString(textnamePosX, textY, textname, color, font, -1, textScale);
+	}
+
+	if (text[0]) 
+	{
+		const short textboxXPos = 50;
+		const short textboxYPos = 150;
+		const int	textboxWidth = 275;
+		const int	textboxHeight = 235;
+		const float	textScale = 0.7f;
+
+		CG_DisplayBoxedText(textboxXPos,textboxYPos,textboxWidth,textboxHeight,va("%s%s", text,text2),
+													CG_MagicFontToReal(2),
 													textScale,
 													colorTable[CT_WHITE]
 													);
 	}
+
+
 }
 
 int CG_MagicFontToReal( int menuFontIndex )

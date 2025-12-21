@@ -6817,12 +6817,7 @@ void Item_ListBox_Paint(itemDef_t *item)
 	}
 	else
 	{
-<<<<<<< Updated upstream
-=======
-
-
->>>>>>> Stashed changes
-//JLF new variable (code idented with if)
+//JLF new variable
 		if (!listPtr->scrollhidden)
 		{
 			// draw scrollbar to right side of the window
