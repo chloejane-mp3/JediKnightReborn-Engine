@@ -161,7 +161,8 @@ typedef enum {
 	DP_OBJECTIVES,
 	DP_WEAPONS,
 	DP_INVENTORY,
-	DP_FORCEPOWERS
+	DP_FORCEPOWERS,
+	DP_FORCEINVENTORY
 }dpTypes_t;
 
 typedef enum {

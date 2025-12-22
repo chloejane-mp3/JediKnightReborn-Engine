@@ -170,6 +170,7 @@ void			UI_AdjustSaveGameListBox( int currentLine );
 
 void			Menus_CloseByName(const char *p);
 
+
 // Movedata Sounds
 enum
 {
@@ -1584,6 +1585,7 @@ static qboolean UI_RunMenuScript ( const char **args )
 		{
 			// TODO for MAC_PORT, will only be valid for non-JK2 mode
 		}
+	
 		else
 		{
 			Com_Printf("unknown UI script %s\n", name);
@@ -3856,6 +3858,10 @@ static void UI_OwnerDraw(float x, float y, float w, float h, float text_x, float
 		case UI_DATAPAD_FORCEPOWERS:
 			ui.Draw_DataPad(DP_HUD);
 			ui.Draw_DataPad(DP_FORCEPOWERS);
+			break;
+		
+		case UI_DP_FORCEINVENTORY:
+			ui.Draw_DataPad(DP_FORCEINVENTORY);
 			break;
 
 		case UI_ALLMAPS_SELECTION://saved game thumbnail

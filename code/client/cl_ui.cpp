@@ -187,6 +187,9 @@ void CL_DrawDatapad(int HUDType)
 	case DP_FORCEPOWERS:
 		VM_Call( CG_DRAW_DATAPAD_FORCEPOWERS );
 		break;
+	case DP_FORCEINVENTORY:
+		VM_Call( CG_DRAW_DATAPAD_FORCEINVENTORY );
+		break;
 	default:
 		break;
 	}
