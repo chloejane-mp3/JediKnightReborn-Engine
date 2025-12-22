@@ -30,6 +30,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "../qcommon/sstring.h"
 #include "qcommon/ojk_saved_game_helper.h"
 
+
 //NOTENOTE: Be sure to change the mirrored code in g_shared.h
 typedef	std::map< sstring_t, unsigned char  >	namePrecache_m;
 extern namePrecache_m	*as_preCacheMap;
@@ -92,6 +93,7 @@ void CG_DrawDataPadObjectives(const centity_t *cent );
 void CG_DrawDataPadIconBackground(const int backgroundType);
 void CG_DrawDataPadWeaponSelect( void );
 void CG_DrawDataPadForceSelect( void );
+void CG_DrawDataPadForceInventory( void);
 
 /*
 ================
@@ -181,6 +183,12 @@ Ghoul2 Insert End
 			CG_DrawDataPadForceSelect();
 		}
 		return 0;
+	case CG_DRAW_DATAPAD_FORCEINVENTORY:
+		if (cg.snap)
+		{
+			CG_DrawDataPadIconBackground(ICON_FORCE);
+			CG_DrawDataPadForceInventory();
+		}
 	}
 	return -1;
 }
@@ -4304,6 +4312,178 @@ void CG_DrawDataPadForceSelect( void )
 
 }
 
+/*
+===================
+CG_DrawDataPadForceInventory
+===================
+*/
+
+const char *showInventoryPowersName[] =
+{
+	"SP_INGAME_HEAL2",
+	"SP_INGAME_JUMP2",
+	"SP_INGAME_SPEED2",
+	"SP_INGAME_PUSH2",
+	"SP_INGAME_PULL2",
+	"SP_INGAME_MINDTRICK2",
+	"SP_INGAME_GRIP2",
+	"SP_INGAME_LIGHTNING2",
+	"SP_INGAME_SABER_THROW2",
+	"SP_INGAME_SABER_OFFENSE2",
+	"SP_INGAME_SABER_DEFENSE2",
+	NULL,
+};
+
+qboolean CG_ForcePower_Valid(int forceKnownBits, int index);
+
+const int	MAXLOADICONSPERROW = 8;		// Max icons displayed per row
+const int	MAXLOADWEAPONS = 16;
+const int	MAXLOAD_FORCEICONSIZE = 40;	// Size of force power icons
+const int	MAXLOAD_FORCEICONPAD = 12;	// Padding space between icons
+
+static int CG_DrawLoadForcePrintRow( const char *itemName, int forceBits,int rowIconCnt, int startIndex)
+{
+	int		i,endIndex=0, printedIconCnt=0;
+	int		holdX,x,y;
+	int		yOffset = 0;
+	int		width,height;
+	vec4_t	color;
+	qhandle_t	background;
+
+	if (!cgi_UI_GetMenuItemInfo(
+		"loadScreen",
+		itemName,
+		&x,
+		&y,
+		&width,
+		&height,
+		color,
+		&background))
+	{
+		return(0);
+	}
+
+	cgi_R_SetColor( color );
+
+	// calculate placement of weapon icons
+	holdX = x + (width - ((MAXLOAD_FORCEICONSIZE*rowIconCnt) + (MAXLOAD_FORCEICONPAD * (rowIconCnt-1))))/2;
+
+	for (i=startIndex;i<MAX_SHOWPOWERS;i++)
+	{
+		if (!CG_ForcePower_Valid(forceBits,i))	// Does he have this power?
+		{
+			continue;
+		}
+
+		if (force_icons[showPowers[i]])
+		{
+			endIndex = i;
+
+			CG_DrawPic( holdX, y+yOffset, MAXLOAD_FORCEICONSIZE, MAXLOAD_FORCEICONSIZE, force_icons[showPowers[i]] );
+
+			printedIconCnt++;
+			if (printedIconCnt==MAXLOADICONSPERROW)
+			{
+				break;
+			}
+
+			holdX += (MAXLOAD_FORCEICONSIZE+MAXLOAD_FORCEICONPAD);
+		}
+	}
+
+	return (endIndex);
+}
+
+int			forcepowerinventoryLevel[NUM_FORCE_POWERS];
+
+
+/*CG_DrawForceInventory*/
+static void CG_DrawForceInventory( int forceBits )
+{
+	int		i,endIndex=0;
+	int		iconCnt=0,rowIconCnt;
+
+	// Count the number of force powers known
+	for (i=0; i<MAX_SHOWPOWERS; ++i)
+	{
+		if (CG_ForcePower_Valid(forceBits, i))
+		{
+			iconCnt++;
+		}
+	}
+
+	if (!iconCnt)	// If no force powers, don't display
+	{
+		return;
+	}
+
+	// Single line of icons
+	if (iconCnt<=MAXLOADICONSPERROW)
+	{
+		CG_DrawLoadForcePrintRow("forceicons_singlerow", forceBits, iconCnt,0);
+	}
+	// Two lines of icons
+	else
+	{
+		// Print top row
+		endIndex = CG_DrawLoadForcePrintRow("forceicons_row1", forceBits, MAXLOADICONSPERROW,0);
+
+		// Print second row
+		rowIconCnt = iconCnt - MAXLOADICONSPERROW;
+		CG_DrawLoadForcePrintRow("forceicons_row2", forceBits, rowIconCnt,endIndex+1);
+	}
+
+	cgi_R_SetColor( NULL );
+}
+
+// Get the player weapons and force power info
+static void CG_GetPlayerForcePowers(int* forceBits)
+{
+	char	s[MAX_STRING_CHARS];
+	int		iDummy,i;
+	float	fDummy;
+	const char	*var;
+
+	gi.Cvar_VariableStringBuffer( sCVARNAME_PLAYERSAVE, s, sizeof(s) );
+
+	// Get player weapons and force powers known
+	if (s[0])
+	{
+	//				|general info				  |-force powers
+		sscanf( s, "%i %i",
+							//force power data
+				&*forceBits,	//	&client->ps.forcePowersKnown,
+				&iDummy		//	&client->ps.forcePower,
+
+				);
+	}
+
+	// the new JK2 stuff - force powers, etc...
+	//
+	gi.Cvar_VariableStringBuffer( "playerfplvl", s, sizeof(s) );
+	i=0;
+	var = strtok( s, " " );
+	while( var != NULL )
+	{
+		/* While there are tokens in "s" */
+		forcepowerinventoryLevel[i++] = atoi(var);
+		/* Get next token: */
+		var = strtok( NULL, " " );
+	}
+}
+
+/*CG_DrawDataPadForceInventory*/
+void CG_DrawDataPadForceInventory(  )
+{
+    int forcepowers=0;
+
+    CG_GetPlayerForcePowers(&forcepowers);
+
+    CG_DrawForceInventory(forcepowers);
+}
+
+
+/*CG_MagicFontToReal*/
 int CG_MagicFontToReal( int menuFontIndex )
 {
 	// As the engine supports multiple renderers now we can no longer assume the
