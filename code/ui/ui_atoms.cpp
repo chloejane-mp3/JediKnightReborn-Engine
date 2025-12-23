@@ -31,6 +31,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 
 #include "ui_local.h"
 #include "gameinfo.h"
+#include "../qcommon/stv_version.h"
 
 uiimport_t	ui;
 uiStatic_t	uis;
