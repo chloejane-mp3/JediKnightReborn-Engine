@@ -36,21 +36,10 @@ jobs:
             platform: x64
 
     steps:
-      - uses: actions/checkout@v4
-        if: github.event_name == 'pull_request'
-        with:
-          fetch-depth: 0
-          fetch-tags: true
-          ref: ${{ github.event.pull_request.head.sha }}
-
-      - uses: actions/checkout@v4
-        if: github.event_name != 'pull_request'
-        with:
-          fetch-depth: 0
-          fetch-tags: true
+      - uses: actions/checkout@v3
 
       - name: Add msbuild to PATH
-        uses: microsoft/setup-msbuild@v1.3.2
+        uses: microsoft/setup-msbuild@v1.1
 
       - name: Create Build Environment
         run: cmake -E make_directory ${{ github.workspace }}/build
@@ -79,14 +68,14 @@ jobs:
         shell: bash
         run: cmake --install . --config ${{ matrix.build_type }}
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v3
         if: ${{ matrix.build_type == 'Release' }}
         with:
           name: OpenJK-windows-${{ matrix.arch }}-${{ matrix.build_type }}-${{ matrix.portable }}
           path: ${{ github.workspace }}/build/bin/JediAcademy
           if-no-files-found: error
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v3
         if: ${{ matrix.build_type == 'Release' }}
         with:
           name: OpenJO-windows-${{ matrix.arch }}-${{ matrix.build_type }}-${{ matrix.portable }}
@@ -104,18 +93,7 @@ jobs:
         portable: [Non-Portable]
 
     steps:
-      - uses: actions/checkout@v4
-        if: github.event_name == 'pull_request'
-        with:
-          fetch-depth: 0
-          fetch-tags: true
-          ref: ${{ github.event.pull_request.head.sha }}
-
-      - uses: actions/checkout@v4
-        if: github.event_name != 'pull_request'
-        with:
-          fetch-depth: 0
-          fetch-tags: true
+      - uses: actions/checkout@v3
 
       - name: Create Build Environment
         run: |
@@ -171,14 +149,14 @@ jobs:
         shell: bash
         run: tar -czvf OpenJO-linux-${{ matrix.arch }}-${{ matrix.build_type }}-${{ matrix.portable }}.tar.gz *
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v3
         if: ${{ matrix.build_type == 'Release' }}
         with:
           name: OpenJK-linux-${{ matrix.arch }}-${{ matrix.build_type }}-${{ matrix.portable }}
           path: ${{github.workspace}}/install/JediAcademy/OpenJK-linux-${{ matrix.arch }}-${{ matrix.build_type }}-${{ matrix.portable }}.tar.gz
           if-no-files-found: error
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v3
         if: ${{ matrix.build_type == 'Release' }}
         with:
           name: OpenJO-linux-${{ matrix.arch }}-${{ matrix.build_type }}-${{ matrix.portable }}
@@ -191,28 +169,17 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runner: [macos-13, macos-14]
+        runner: [macos-12, macos-14]
         build_type: [Debug, Release]
         portable: [Non-Portable]
         include:
-          - runner: macos-13
+          - runner: macos-12
             arch: x86_64
           - runner: macos-14
             arch: arm64
 
     steps:
-      - uses: actions/checkout@v4
-        if: github.event_name == 'pull_request'
-        with:
-          fetch-depth: 0
-          fetch-tags: true
-          ref: ${{ github.event.pull_request.head.sha }}
-
-      - uses: actions/checkout@v4
-        if: github.event_name != 'pull_request'
-        with:
-          fetch-depth: 0
-          fetch-tags: true
+      - uses: actions/checkout@v3
 
       - name: Create Build Environment
         run: |
@@ -247,22 +214,26 @@ jobs:
         if: ${{ matrix.build_type == 'Release' }}
         working-directory: ${{ github.workspace }}/install/JediAcademy
         shell: bash
-        run: tar -czvf openjk-macos-${{ matrix.arch }}-${{ matrix.build_type }}-${{ matrix.portable }}.tar.gz *
+        run: |
+          chmod +x openjk.${{ matrix.arch }}.app/Contents/MacOS/openjk.${{ matrix.arch }}
+          tar -czvf openjk-macos-${{ matrix.arch }}-${{ matrix.build_type }}-${{ matrix.portable }}.tar.gz *
 
       - name: Create OpenJO binary archive
         if: ${{ matrix.build_type == 'Release' }}
         working-directory: ${{ github.workspace }}/install/JediOutcast
         shell: bash
-        run: tar -czvf openjo_sp-macos-${{ matrix.arch }}-${{ matrix.build_type }}-${{ matrix.portable }}.tar.gz *
+        run: |
+          chmod +x openjo_sp.${{ matrix.arch }}.app/Contents/MacOS/openjo_sp.${{ matrix.arch }}
+          tar -czvf openjo_sp-macos-${{ matrix.arch }}-${{ matrix.build_type }}-${{ matrix.portable }}.tar.gz *
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v3
         if: ${{ matrix.build_type == 'Release' }}
         with:
           name: OpenJK-macos-${{ matrix.arch }}-${{ matrix.build_type }}-${{ matrix.portable }}
           path: ${{ github.workspace }}/install/JediAcademy/openjk-macos-${{ matrix.arch }}-${{ matrix.build_type }}-${{ matrix.portable }}.tar.gz
           if-no-files-found: error
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v3
         if: ${{ matrix.build_type == 'Release' }}
         with:
           name: OpenJO-macos-${{ matrix.arch }}-${{ matrix.build_type }}-${{ matrix.portable }}
@@ -274,12 +245,12 @@ jobs:
     needs: [msvc, ubuntu, macos]
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v3
         with:
           submodules: recursive
 
       - name: Download Artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v3
 
       - name: Create binary archives
         run: |
@@ -298,7 +269,7 @@ jobs:
           mv ./OpenJO-macos-arm64-Release-Non-Portable/* OpenJO-macos-arm64.tar.gz
 
       - name: Create latest build
-        uses: marvinpinto/action-automatic-releases@d68defdd11f9dcc7f52f35c1b7c236ee7513bcc1 # latest
+        uses: marvinpinto/action-automatic-releases@latest
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           automatic_release_tag: "latest"
@@ -365,12 +336,12 @@ jobs:
             zip: false
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v3
         with:
           submodules: recursive
 
       - name: Download Artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v3
 
       - name: Create archive
         run: |
