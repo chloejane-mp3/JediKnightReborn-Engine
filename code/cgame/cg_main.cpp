@@ -30,7 +30,6 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include "../qcommon/sstring.h"
 #include "qcommon/ojk_saved_game_helper.h"
 
-
 //NOTENOTE: Be sure to change the mirrored code in g_shared.h
 typedef	std::map< sstring_t, unsigned char  >	namePrecache_m;
 extern namePrecache_m	*as_preCacheMap;
@@ -1434,6 +1433,8 @@ static void CG_RegisterGraphics( void ) {
 
 	cgs.media.DPForcePowerOverlay = cgi_R_RegisterShader( "gfx/hud/force_swirl" );
 
+	cgs.media.scrollbarThumb = cgi_R_RegisterShaderNoMip("gfx/menus/scrollbar_vertical");
+
 	//NOTE: we should only cache this if there is a vehicle or emplaced gun somewhere on the map
 	cgs.media.emplacedHealthBarShader = cgi_R_RegisterShaderNoMip( "gfx/hud/health_frame" );
 
@@ -2172,6 +2173,7 @@ void CG_Init( int serverCommandSequence ) {
 	CG_GameStateReceived();
 
 	CG_InitConsoleCommands();
+
 
 	cg.weaponPickupTextTime = 0;
 
@@ -3703,27 +3705,23 @@ const char *showPowersName[MAX_SHOWPOWERS] =
 // Keep these with groups light side, core, and dark side
 int showDataPadPowers[MAX_DPSHOWPOWERS] =
 {
-	// Light side
-	FP_ABSORB,
-	FP_HEAL,
-	FP_PROTECT,
-	FP_TELEPATHY,
-
-	// Core Powers
-	FP_LEVITATION,
-	FP_SPEED,
-	FP_PUSH,
-	FP_PULL,
-	FP_SABERTHROW,
-	FP_SABER_DEFENSE,
-	FP_SABER_OFFENSE,
-	FP_SEE,
-
-	//Dark Side
-	FP_DRAIN,
-	FP_LIGHTNING,
-	FP_RAGE,
-	FP_GRIP,
+	// Order matches force_icon_files[] array indices
+	FP_HEAL,             // 0
+	FP_LEVITATION,       // 1
+	FP_SPEED,            // 2
+	FP_PUSH,             // 3
+	FP_PULL,             // 4
+	FP_TELEPATHY,        // 5
+	FP_GRIP,             // 6
+	FP_LIGHTNING,        // 7
+	FP_SABERTHROW,       // 8
+	FP_SABER_DEFENSE,    // 9
+	FP_SABER_OFFENSE,    // 10
+	FP_RAGE,             // 11
+	FP_PROTECT,          // 12
+	FP_ABSORB,           // 13
+	FP_DRAIN,            // 14
+	FP_SEE,              // 15
 };
 
 /*
@@ -4080,113 +4078,103 @@ void CG_DPPrevForcePower_f( void )
 
 const char *forcepowerDesc[NUM_FORCE_POWERS] =
 {
-"FORCE_ABSORB_DESC",
 "FORCE_HEAL_DESC",
-"FORCE_PROTECT_DESC",
-"FORCE_MIND_TRICK_DESC",
-
 "FORCE_JUMP_DESC",
 "FORCE_SPEED_DESC",
 "FORCE_PUSH_DESC",
 "FORCE_PULL_DESC",
+"FORCE_MIND_TRICK_DESC",
+"FORCE_GRIP_DESC",
+"FORCE_LIGHTNING_DESC",
 "FORCE_SABER_THROW_DESC",
 "FORCE_SABER_DEFENSE_DESC",
 "FORCE_SABER_OFFENSE_DESC",
-"FORCE_SENSE_DESC",
-
-"FORCE_DRAIN_DESC",
-"FORCE_LIGHTNING_DESC",
 "FORCE_RAGE_DESC",
-"FORCE_GRIP_DESC",
+"FORCE_PROTECT_DESC",
+"FORCE_ABSORB_DESC",
+"FORCE_DRAIN_DESC",
+"FORCE_SENSE_DESC",
 };
 
 
 const char *forcepowerLvl1Desc[NUM_FORCE_POWERS] =
 {
-"FORCE_ABSORB_LVL1_DESC",
 "FORCE_HEAL_LVL1_DESC",
-"FORCE_PROTECT_LVL1_DESC",
-"FORCE_MIND_TRICK_LVL1_DESC",
-
 "FORCE_JUMP_LVL1_DESC",
 "FORCE_SPEED_LVL1_DESC",
 "FORCE_PUSH_LVL1_DESC",
 "FORCE_PULL_LVL1_DESC",
+"FORCE_MIND_TRICK_LVL1_DESC",
+"FORCE_GRIP_LVL1_DESC",
+"FORCE_LIGHTNING_LVL1_DESC",
 "FORCE_SABER_THROW_LVL1_DESC",
 "FORCE_SABER_DEFENSE_LVL1_DESC",
 "FORCE_SABER_OFFENSE_LVL1_DESC",
-"FORCE_SENSE_LVL1_DESC",
-
-"FORCE_DRAIN_LVL1_DESC",
-"FORCE_LIGHTNING_LVL1_DESC",
 "FORCE_RAGE_LVL1_DESC",
-"FORCE_GRIP_LVL1_DESC",
+"FORCE_PROTECT_LVL1_DESC",
+"FORCE_ABSORB_LVL1_DESC",
+"FORCE_DRAIN_LVL1_DESC",
+"FORCE_SENSE_LVL1_DESC",
 };
 
 const char *forcepowerLvl2Desc[NUM_FORCE_POWERS] =
 {
-"FORCE_ABSORB_LVL2_DESC",
 "FORCE_HEAL_LVL2_DESC",
-"FORCE_PROTECT_LVL2_DESC",
-"FORCE_MIND_TRICK_LVL2_DESC",
-
 "FORCE_JUMP_LVL2_DESC",
 "FORCE_SPEED_LVL2_DESC",
 "FORCE_PUSH_LVL2_DESC",
 "FORCE_PULL_LVL2_DESC",
+"FORCE_MIND_TRICK_LVL2_DESC",
+"FORCE_GRIP_LVL2_DESC",
+"FORCE_LIGHTNING_LVL2_DESC",
 "FORCE_SABER_THROW_LVL2_DESC",
 "FORCE_SABER_DEFENSE_LVL2_DESC",
 "FORCE_SABER_OFFENSE_LVL2_DESC",
-"FORCE_SENSE_LVL2_DESC",
-
-"FORCE_DRAIN_LVL2_DESC",
-"FORCE_LIGHTNING_LVL2_DESC",
 "FORCE_RAGE_LVL2_DESC",
-"FORCE_GRIP_LVL2_DESC",
+"FORCE_PROTECT_LVL2_DESC",
+"FORCE_ABSORB_LVL2_DESC",
+"FORCE_DRAIN_LVL2_DESC",
+"FORCE_SENSE_LVL2_DESC",
 };
 
 const char *forcepowerLvl3Desc[NUM_FORCE_POWERS] =
 {
-"FORCE_ABSORB_LVL3_DESC",
 "FORCE_HEAL_LVL3_DESC",
-"FORCE_PROTECT_LVL3_DESC",
-"FORCE_MIND_TRICK_LVL3_DESC",
-
 "FORCE_JUMP_LVL3_DESC",
 "FORCE_SPEED_LVL3_DESC",
 "FORCE_PUSH_LVL3_DESC",
 "FORCE_PULL_LVL3_DESC",
+"FORCE_MIND_TRICK_LVL3_DESC",
+"FORCE_GRIP_LVL3_DESC",
+"FORCE_LIGHTNING_LVL3_DESC",
 "FORCE_SABER_THROW_LVL3_DESC",
 "FORCE_SABER_DEFENSE_LVL3_DESC",
 "FORCE_SABER_OFFENSE_LVL3_DESC",
-"FORCE_SENSE_LVL3_DESC",
-
-"FORCE_DRAIN_LVL3_DESC",
-"FORCE_LIGHTNING_LVL3_DESC",
 "FORCE_RAGE_LVL3_DESC",
-"FORCE_GRIP_LVL3_DESC",
+"FORCE_PROTECT_LVL3_DESC",
+"FORCE_ABSORB_LVL3_DESC",
+"FORCE_DRAIN_LVL3_DESC",
+"FORCE_SENSE_LVL3_DESC",
 };
 
 const char *forcepowerName[NUM_FORCE_POWERS] =
 {
-"FORCE_ABSORB_NAME",
 "FORCE_HEAL_NAME",
-"FORCE_PROTECT_NAME",
-"FORCE_MIND_TRICK_NAME",
-
 "FORCE_JUMP_NAME",
 "FORCE_SPEED_NAME",
 "FORCE_PUSH_NAME",
 "FORCE_PULL_NAME",
+"FORCE_MIND_TRICK_NAME",
+"FORCE_GRIP_NAME",
+"FORCE_LIGHTNING_NAME",
 "FORCE_SABER_THROW_NAME",
 "FORCE_SABER_DEFENSE_NAME",
 "FORCE_SABER_OFFENSE_NAME",
-"FORCE_SENSE_NAME",
-
-"FORCE_DRAIN_NAME",
-"FORCE_LIGHTNING_NAME",
 "FORCE_RAGE_NAME",
-"FORCE_GRIP_NAME",
+"FORCE_PROTECT_NAME",
+"FORCE_ABSORB_NAME",
+"FORCE_DRAIN_NAME",
+"FORCE_SENSE_NAME",
 };
 
 /*
@@ -4220,12 +4208,12 @@ void CG_DrawDataPadForceSelect( void )
 
 	// Time to switch new icon colors
 	// Faded side icon color
-//	memcpy(fadeColor, colorTable[CT_WHITE], sizeof(vec4_t));
+	//	memcpy(fadeColor, colorTable[CT_WHITE], sizeof(vec4_t));
 
 	cg.iconSelectTime = cg.forcepowerSelectTime;
 
-	const int bigiconwidth = 453;
-	const int bigiconheight = 340;
+	const int bigiconwidth = 340;
+	const int bigiconheight = 453;
 	const int graphicXPos = 315;
 	const int graphicYPos = 14;
 
@@ -4236,18 +4224,20 @@ void CG_DrawDataPadForceSelect( void )
 	}
 
 	// Draw Force Icon
-	if (force_icons[showDataPadPowers[cg.DataPadforcepowerSelect]])
-	{
 
+	int selectedForcePowerID = showDataPadPowers[cg.DataPadforcepowerSelect];
+
+	if (force_icons[selectedForcePowerID])
+	{
 		cgi_R_SetColor(colorTable[CT_WHITE]);
-		CG_DrawPic( graphicXPos, graphicYPos, bigiconheight, bigiconwidth, force_icons[showDataPadPowers[cg.DataPadforcepowerSelect]] );
+		CG_DrawPic( graphicXPos, graphicYPos, bigiconwidth, bigiconheight, force_icons[selectedForcePowerID] );
 
 		// New force power
-		if (((cg_updatedDataPadForcePower1.integer - 1) == showDataPadPowers[cg.DataPadforcepowerSelect]) ||
-			((cg_updatedDataPadForcePower2.integer - 1) == showDataPadPowers[cg.DataPadforcepowerSelect]) ||
-			((cg_updatedDataPadForcePower3.integer - 1) == showDataPadPowers[cg.DataPadforcepowerSelect]))
+		if (((cg_updatedDataPadForcePower1.integer - 1) == selectedForcePowerID) ||
+			((cg_updatedDataPadForcePower2.integer - 1) == selectedForcePowerID) ||
+			((cg_updatedDataPadForcePower3.integer - 1) == selectedForcePowerID))
 		{
-			CG_DrawPic( graphicXPos, graphicYPos, bigiconheight, bigiconwidth, cgs.media.DPForcePowerOverlay );
+			CG_DrawPic( graphicXPos, graphicYPos, bigiconwidth, bigiconheight, cgs.media.DPForcePowerOverlay );
 		}
 	}
 
@@ -4258,25 +4248,26 @@ void CG_DrawDataPadForceSelect( void )
 		i = 0;
 	}
 
+	// Get the actual force power ID from the selected index
+
 	cgi_R_SetColor(colorTable[CT_WHITE]);
 
-	cgi_SP_GetStringTextString( va("SP_INGAME_%s",forcepowerDesc[cg.DataPadforcepowerSelect]), text, sizeof(text) );
+	cgi_SP_GetStringTextString( va("SP_INGAME_%s",forcepowerDesc[selectedForcePowerID]), text, sizeof(text) );
 
-	cgi_SP_GetStringTextString( va("SP_INGAME_%s", forcepowerName[cg.DataPadforcepowerSelect]), textname, sizeof(textname));
+	cgi_SP_GetStringTextString( va("SP_INGAME_%s", forcepowerName[selectedForcePowerID]), textname, sizeof(textname));
 
-	if (player->client->ps.forcePowerLevel[showDataPadPowers[cg.DataPadforcepowerSelect]]==1)
+	if (player->client->ps.forcePowerLevel[selectedForcePowerID]==1)
 	{
-		cgi_SP_GetStringTextString( va("SP_INGAME_%s",forcepowerLvl1Desc[cg.DataPadforcepowerSelect]), text2, sizeof(text2) );
+		cgi_SP_GetStringTextString( va("SP_INGAME_%s",forcepowerLvl1Desc[selectedForcePowerID]), text2, sizeof(text2) );
 	}
-	else if (player->client->ps.forcePowerLevel[showDataPadPowers[cg.DataPadforcepowerSelect]]==2)
+	else if (player->client->ps.forcePowerLevel[selectedForcePowerID]==2)
 	{
-		cgi_SP_GetStringTextString( va("SP_INGAME_%s",forcepowerLvl2Desc[cg.DataPadforcepowerSelect]), text2, sizeof(text2) );
+		cgi_SP_GetStringTextString( va("SP_INGAME_%s",forcepowerLvl2Desc[selectedForcePowerID]), text2, sizeof(text2) );
 	}
 	else
 	{
-		cgi_SP_GetStringTextString( va("SP_INGAME_%s",forcepowerLvl3Desc[cg.DataPadforcepowerSelect]), text2, sizeof(text2) );
+		cgi_SP_GetStringTextString( va("SP_INGAME_%s",forcepowerLvl3Desc[selectedForcePowerID]), text2, sizeof(text2) );
 	}
-
 	if (textname[0])
 	{
 		const float textScale = 0.7f;
@@ -4300,7 +4291,7 @@ void CG_DrawDataPadForceSelect( void )
 		const short textboxYPos = 150;
 		const int	textboxWidth = 275;
 		const int	textboxHeight = 235;
-		const float	textScale = 0.7f;
+		const float	textScale = 0.6f;
 
 		CG_DisplayBoxedText(textboxXPos,textboxYPos,textboxWidth,textboxHeight,va("%s%s", text,text2),
 													CG_MagicFontToReal(2),
@@ -4312,176 +4303,299 @@ void CG_DrawDataPadForceSelect( void )
 
 }
 
+// Global scroll offset for force power listbox
+static int g_forcePowerScrollOffset = 0;
+static int g_forcePowerMaxScroll = 0;
+
+// Cvar for click detection
+static vmCvar_t ui_datapadClickedLine;
+static vmCvar_t ui_datapadSelectedPowerID;  // Stores the actual force power ID for menu use
+
+// Listbox dimensions - THESE MUST MATCH IN BOTH DRAW AND UI CODE
+#define DATAPAD_LISTBOX_X 70
+#define DATAPAD_LISTBOX_Y 110
+#define DATAPAD_LISTBOX_WIDTH 500
+#define DATAPAD_LISTBOX_HEIGHT 250
+#define DATAPAD_LISTBOX_LINEHEIGHT 25
+#define DATAPAD_LISTBOX_MAXITEMS 10
+
+/*
+===================
+CG_DataPadForceInventory_HandleClick
+===================
+*/
+
+qboolean CG_DataPadForceInventory_HandleClick(int x, int y)
+{
+	// Listbox dimensions (must match CG_DrawDataPadForceInventory)
+	constexpr int startX = 70;
+	constexpr int startY = 110;
+	constexpr int lineHeight = 25;
+	constexpr int maxVisibleItems = 10;
+	constexpr int listboxWidth = 500;
+	constexpr int listboxHeight = maxVisibleItems * lineHeight;
+	
+	// Check if click is within listbox bounds
+	if (x < startX || x > startX + listboxWidth ||
+		y < startY || y > startY + listboxHeight)
+	{
+		return qfalse;
+	}
+	
+	// Calculate which line was clicked
+	int clickedLine = (y - startY) / lineHeight;
+	if (clickedLine < 0 || clickedLine >= maxVisibleItems)
+	{
+		return qfalse;
+	}
+	
+	// Build list of valid powers (same as draw function)
+	int validPowers[MAX_DPSHOWPOWERS];
+	int totalValidPowers = 0;
+	
+	for (int i = 0; i < MAX_DPSHOWPOWERS; i++)
+	{
+		if (ForcePowerDataPad_Valid(i))
+		{
+			validPowers[totalValidPowers++] = i;
+		}
+	}
+	
+	if (totalValidPowers == 0)
+	{
+		return qfalse;
+	}
+	
+	// Calculate actual power index
+	int powerIndex = g_forcePowerScrollOffset + clickedLine;
+	if (powerIndex >= totalValidPowers)
+	{
+		return qfalse;
+	}
+	
+	// Update selection to clicked power
+	cg.DataPadforcepowerSelect = validPowers[powerIndex];
+	
+	// Play selection sound
+	cgi_S_StartSound(NULL, 0, CHAN_AUTO, cgs.media.selectSound2);
+}
+
 /*
 ===================
 CG_DrawDataPadForceInventory
 ===================
 */
-
-const char *showInventoryPowersName[] =
+void CG_DrawDataPadForceInventory()
 {
-	"SP_INGAME_HEAL2",
-	"SP_INGAME_JUMP2",
-	"SP_INGAME_SPEED2",
-	"SP_INGAME_PUSH2",
-	"SP_INGAME_PULL2",
-	"SP_INGAME_MINDTRICK2",
-	"SP_INGAME_GRIP2",
-	"SP_INGAME_LIGHTNING2",
-	"SP_INGAME_SABER_THROW2",
-	"SP_INGAME_SABER_OFFENSE2",
-	"SP_INGAME_SABER_DEFENSE2",
-	NULL,
-};
-
-qboolean CG_ForcePower_Valid(int forceKnownBits, int index);
-
-const int	MAXLOADICONSPERROW = 8;		// Max icons displayed per row
-const int	MAXLOADWEAPONS = 16;
-const int	MAXLOAD_FORCEICONSIZE = 40;	// Size of force power icons
-const int	MAXLOAD_FORCEICONPAD = 12;	// Padding space between icons
-
-static int CG_DrawLoadForcePrintRow( const char *itemName, int forceBits,int rowIconCnt, int startIndex)
-{
-	int		i,endIndex=0, printedIconCnt=0;
-	int		holdX,x,y;
-	int		yOffset = 0;
-	int		width,height;
-	vec4_t	color;
-	qhandle_t	background;
-
-	if (!cgi_UI_GetMenuItemInfo(
-		"loadScreen",
-		itemName,
-		&x,
-		&y,
-		&width,
-		&height,
-		color,
-		&background))
+	const int startX = DATAPAD_LISTBOX_X;
+	const int startY = DATAPAD_LISTBOX_Y;
+	const int lineHeight = DATAPAD_LISTBOX_LINEHEIGHT;
+	constexpr float textScale = 0.7f;
+	const int maxVisibleItems = DATAPAD_LISTBOX_MAXITEMS;
+	const int listboxWidth = DATAPAD_LISTBOX_WIDTH;
+	const int listboxHeight = DATAPAD_LISTBOX_HEIGHT;
+	
+	int itemCount = 0;
+	int validPowers[MAX_DPSHOWPOWERS];
+	int totalValidPowers = 0;
+	char powerNameText[1024];
+	vec4_t textColor;
+	vec4_t bgColor;
+	
+	// First pass: count and store valid powers
+	for (int i = 0; i < MAX_DPSHOWPOWERS; i++)
 	{
-		return(0);
-	}
-
-	cgi_R_SetColor( color );
-
-	// calculate placement of weapon icons
-	holdX = x + (width - ((MAXLOAD_FORCEICONSIZE*rowIconCnt) + (MAXLOAD_FORCEICONPAD * (rowIconCnt-1))))/2;
-
-	for (i=startIndex;i<MAX_SHOWPOWERS;i++)
-	{
-		if (!CG_ForcePower_Valid(forceBits,i))	// Does he have this power?
+		if (ForcePowerDataPad_Valid(i))
 		{
-			continue;
-		}
-
-		if (force_icons[showPowers[i]])
-		{
-			endIndex = i;
-
-			CG_DrawPic( holdX, y+yOffset, MAXLOAD_FORCEICONSIZE, MAXLOAD_FORCEICONSIZE, force_icons[showPowers[i]] );
-
-			printedIconCnt++;
-			if (printedIconCnt==MAXLOADICONSPERROW)
-			{
-				break;
-			}
-
-			holdX += (MAXLOAD_FORCEICONSIZE+MAXLOAD_FORCEICONPAD);
+			validPowers[totalValidPowers++] = i;
 		}
 	}
-
-	return (endIndex);
-}
-
-int			forcepowerinventoryLevel[NUM_FORCE_POWERS];
-
-
-/*CG_DrawForceInventory*/
-static void CG_DrawForceInventory( int forceBits )
-{
-	int		i,endIndex=0;
-	int		iconCnt=0,rowIconCnt;
-
-	// Count the number of force powers known
-	for (i=0; i<MAX_SHOWPOWERS; ++i)
-	{
-		if (CG_ForcePower_Valid(forceBits, i))
-		{
-			iconCnt++;
-		}
-	}
-
-	if (!iconCnt)	// If no force powers, don't display
+	
+	if (totalValidPowers == 0)
 	{
 		return;
 	}
-
-	// Single line of icons
-	if (iconCnt<=MAXLOADICONSPERROW)
+	
+	// Register and update cvars
+	static qboolean cvarRegistered = qfalse;
+	if (!cvarRegistered)
 	{
-		CG_DrawLoadForcePrintRow("forceicons_singlerow", forceBits, iconCnt,0);
+		cgi_Cvar_Register(&ui_datapadClickedLine, "ui_datapadClickedLine", "-1", 0);
+		cgi_Cvar_Register(&ui_datapadSelectedPowerID, "ui_datapadSelectedPowerID", "-1", 0);
+		cvarRegistered = qtrue;
 	}
-	// Two lines of icons
+	cgi_Cvar_Update(&ui_datapadClickedLine);
+	cgi_Cvar_Update(&ui_datapadSelectedPowerID);
+	
+	// Always update the selected power ID cvar based on current selection
+	if (cg.DataPadforcepowerSelect >= 0 && cg.DataPadforcepowerSelect < MAX_DPSHOWPOWERS)
+	{
+		int currentForcePowerID = showDataPadPowers[cg.DataPadforcepowerSelect];
+		cgi_Cvar_Set("ui_datapadSelectedPowerID", va("%d", currentForcePowerID));
+	}
+	
+	// Check for click from UI system
+	static int lastClickedLine = -1;
+	int clickedLine = ui_datapadClickedLine.integer;
+	
+	if (clickedLine >= 0 && clickedLine != lastClickedLine)
+	{
+		// Calculate actual power index from clicked line
+		int targetIndex = g_forcePowerScrollOffset + clickedLine;
+		
+		if (targetIndex >= 0 && targetIndex < totalValidPowers)
+		{
+			// validPowers[targetIndex] gives us the index into showDataPadPowers array
+			int clickedPowerArrayIndex = validPowers[targetIndex];
+			
+			// Get the actual force power ID
+			int clickedForcePowerID = showDataPadPowers[clickedPowerArrayIndex];
+			
+			// Update selection - this must be the array index, not the force power ID
+			cg.DataPadforcepowerSelect = clickedPowerArrayIndex;
+			cgi_S_StartSound(NULL, 0, CHAN_AUTO, cgs.media.selectSound2);
+			
+			// Update the cvar with the force power ID
+			cgi_Cvar_Set("ui_datapadSelectedPowerID", va("%d", clickedForcePowerID));
+
+		}
+		
+		lastClickedLine = clickedLine;
+		// Reset the cvar
+		cgi_Cvar_Set("ui_datapadClickedLine", "-1");
+	}
+	
+	// Update max scroll for the scroll commands
+	if (totalValidPowers > maxVisibleItems)
+	{
+		g_forcePowerMaxScroll = totalValidPowers - maxVisibleItems;
+	}
 	else
 	{
-		// Print top row
-		endIndex = CG_DrawLoadForcePrintRow("forceicons_row1", forceBits, MAXLOADICONSPERROW,0);
-
-		// Print second row
-		rowIconCnt = iconCnt - MAXLOADICONSPERROW;
-		CG_DrawLoadForcePrintRow("forceicons_row2", forceBits, rowIconCnt,endIndex+1);
+		g_forcePowerMaxScroll = 0;
 	}
-
-	cgi_R_SetColor( NULL );
-}
-
-// Get the player weapons and force power info
-static void CG_GetPlayerForcePowers(int* forceBits)
-{
-	char	s[MAX_STRING_CHARS];
-	int		iDummy,i;
-	float	fDummy;
-	const char	*var;
-
-	gi.Cvar_VariableStringBuffer( sCVARNAME_PLAYERSAVE, s, sizeof(s) );
-
-	// Get player weapons and force powers known
-	if (s[0])
+	
+	// Calculate scroll position based on current selection
+	int selectedIndex = -1;
+	
+	// Find the index of the currently selected power
+	for (int i = 0; i < totalValidPowers; i++)
 	{
-	//				|general info				  |-force powers
-		sscanf( s, "%i %i",
-							//force power data
-				&*forceBits,	//	&client->ps.forcePowersKnown,
-				&iDummy		//	&client->ps.forcePower,
-
-				);
+		if (validPowers[i] == cg.DataPadforcepowerSelect)
+		{
+			selectedIndex = i;
+			break;
+		}
 	}
-
-	// the new JK2 stuff - force powers, etc...
-	//
-	gi.Cvar_VariableStringBuffer( "playerfplvl", s, sizeof(s) );
-	i=0;
-	var = strtok( s, " " );
-	while( var != NULL )
+	
+	// Auto-scroll to keep selected item visible
+	if (selectedIndex >= 0)
 	{
-		/* While there are tokens in "s" */
-		forcepowerinventoryLevel[i++] = atoi(var);
-		/* Get next token: */
-		var = strtok( NULL, " " );
+		if (selectedIndex < g_forcePowerScrollOffset)
+		{
+			g_forcePowerScrollOffset = selectedIndex;
+		}
+		else if (selectedIndex >= g_forcePowerScrollOffset + maxVisibleItems)
+		{
+			g_forcePowerScrollOffset = selectedIndex - maxVisibleItems + 1;
+		}
+	}
+	
+	// Clamp scroll offset
+	if (g_forcePowerScrollOffset < 0)
+	{
+		g_forcePowerScrollOffset = 0;
+	}
+	if (g_forcePowerScrollOffset > totalValidPowers - maxVisibleItems && totalValidPowers > maxVisibleItems)
+	{
+		g_forcePowerScrollOffset = totalValidPowers - maxVisibleItems;
+	}
+	
+	// Draw visible items
+	int endIndex = g_forcePowerScrollOffset + maxVisibleItems;
+	if (endIndex > totalValidPowers)
+	{
+		endIndex = totalValidPowers;
+	}
+	
+	for (int i = g_forcePowerScrollOffset; i < endIndex; i++)
+	{
+		int powerIndex = validPowers[i];
+		int displayIndex = i - g_forcePowerScrollOffset;
+		int y = startY + displayIndex * lineHeight;
+		
+		// Get the localized force power name
+		cgi_SP_GetStringTextString(va("SP_INGAME_%s", forcepowerName[showDataPadPowers[powerIndex]]), 
+									powerNameText, sizeof(powerNameText));
+		
+		// Check if this is the selected item
+		const qboolean isSelected = (powerIndex == cg.DataPadforcepowerSelect) ? qtrue : qfalse;
+		
+		// Check if this is a new power
+		const qboolean isNewPower = ((cg_updatedDataPadForcePower1.integer - 1 == showDataPadPowers[powerIndex] ||
+									  cg_updatedDataPadForcePower2.integer - 1 == showDataPadPowers[powerIndex] ||
+									  cg_updatedDataPadForcePower3.integer - 1 == showDataPadPowers[powerIndex]) ? qtrue : qfalse);
+		
+		// Draw selection highlight
+		if (isSelected)
+		{
+			memcpy(bgColor, colorTable[CT_LTBLUE1], sizeof(vec4_t));
+			bgColor[3] = 0.5f;
+			CG_FillRect(startX - 2, y + 5, listboxWidth - 6, lineHeight - 2, bgColor);
+		}
+		
+		// Draw new power indicator
+		if (isNewPower)
+		{
+			cgi_R_SetColor(colorTable[CT_WHITE]);
+			CG_DrawPic(startX + 2, y + 2, 16, 16, cgs.media.DPForcePowerOverlay);
+		}
+		
+		// Set text color
+		if (isSelected)
+		{
+			memcpy(textColor, colorTable[CT_WHITE], sizeof(vec4_t));
+		}
+		else
+		{
+			memcpy(textColor, colorTable[CT_WHITE], sizeof(vec4_t));
+		}
+		
+		// Draw force power name
+		if (powerNameText[0])
+		{
+			int textX = startX + (isNewPower ? 22 : 5);
+			cgi_R_Font_DrawString(textX, y + 4, powerNameText, textColor, 
+								  cgs.media.qhFontMedium, -1, textScale);
+		}
+		
+		// Draw force power level indicator
+		int powerLevel = player->client->ps.forcePowerLevel[showDataPadPowers[powerIndex]];
+		if (powerLevel > 0)
+		{
+			char levelText[32];
+			Com_sprintf(levelText, sizeof(levelText), "Level %d", powerLevel);
+			cgi_R_Font_DrawString(startX + listboxWidth - 60, y + 4, levelText, textColor, 
+								  cgs.media.qhFontMedium, -1, textScale);
+		}
+	}
+	
+	// Draw scroll indicators if needed
+	if (totalValidPowers > maxVisibleItems)
+	{
+		cgi_R_SetColor(colorTable[CT_WHITE]);
+		
+		// Draw scrollbar
+		int scrollbarHeight = listboxHeight - 10;
+		int scrollbarThumbHeight = 64;
+		
+		int scrollbarThumbPos = (g_forcePowerScrollOffset * (scrollbarHeight - (scrollbarThumbHeight/2))) / 
+								(totalValidPowers - maxVisibleItems);
+		
+		// Scrollbar thumb
+		CG_DrawPic(startX + listboxWidth - 15, startY + scrollbarThumbPos - 5, 32, scrollbarThumbHeight, cgs.media.scrollbarThumb);
 	}
 }
-
-/*CG_DrawDataPadForceInventory*/
-void CG_DrawDataPadForceInventory(  )
-{
-    int forcepowers=0;
-
-    CG_GetPlayerForcePowers(&forcepowers);
-
-    CG_DrawForceInventory(forcepowers);
-}
-
 
 /*CG_MagicFontToReal*/
 int CG_MagicFontToReal( int menuFontIndex )

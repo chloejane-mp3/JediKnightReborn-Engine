@@ -41,6 +41,13 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 
 #include "qcommon/stringed_ingame.h"
 
+#define DATAPAD_LISTBOX_X 70
+#define DATAPAD_LISTBOX_Y 110
+#define DATAPAD_LISTBOX_WIDTH 500
+#define DATAPAD_LISTBOX_HEIGHT 250
+#define DATAPAD_LISTBOX_LINEHEIGHT 25
+#define DATAPAD_LISTBOX_MAXITEMS 10
+
 void		UI_LoadMenus(const char *menuFile, qboolean reset);
 
 extern vmCvar_t	ui_char_color_red;
@@ -87,6 +94,9 @@ static itemDef_t *itemCapture = NULL;   // item that has the mouse captured ( if
 
 #define DOUBLE_CLICK_DELAY 300
 static int lastListBoxClickTime = 0;
+
+static int lastButtonClickTime = 0;
+static itemDef_t *lastButtonClicked = NULL;
 
 static void (*captureFunc) (void *p) = NULL;
 static void *captureData = NULL;
@@ -4254,23 +4264,40 @@ qboolean ItemParse_cinematic( itemDef_t *item)
 ItemParse_doubleClick
 ===============
 */
-qboolean ItemParse_doubleClick( itemDef_t *item)
+qboolean ItemParse_doubleClick(itemDef_t *item)
 {
-	listBoxDef_t *listPtr;
-
-	Item_ValidateTypeData(item);
-	if (!item->typeData)
+	Com_Printf("=== ItemParse_doubleClick called for item type %d ===\n", item->type);
+	
+	// For listbox, store in typeData
+	if (item->type == ITEM_TYPE_LISTBOX)
 	{
-		return qfalse;
+		listBoxDef_t *listPtr;
+		
+		Item_ValidateTypeData(item);
+		if (!item->typeData)
+		{
+			return qfalse;
+		}
+		
+		listPtr = (listBoxDef_t*)item->typeData;
+		
+		if (!PC_Script_Parse(&listPtr->doubleClick))
+		{
+			return qfalse;
+		}
+	
+		return qtrue;
 	}
-
-	listPtr = (listBoxDef_t*)item->typeData;
-
-	if (!PC_Script_Parse(&listPtr->doubleClick))
+	// For other types (buttons, text, etc.), store directly in item
+	else
 	{
-		return qfalse;
+		if (!PC_Script_Parse(&item->doubleClick))
+		{
+			return qfalse;
+		}
+		
+		return qtrue;
 	}
-	return qtrue;
 }
 
 /*
@@ -11562,6 +11589,50 @@ void Menu_HandleKey(menuDef_t *menu, int key, qboolean down)
 		return;
 	}
 
+if (down && (key == A_MWHEELUP || key == A_MWHEELDOWN || key == A_CURSOR_UP || key == A_CURSOR_DOWN || key == A_KP_8 || key == A_KP_2))
+	{
+		// Check if we're in a DataPad menu
+		if (menu && (
+			Q_stricmp(menu->window.name, "datapadForcePowersMenu") == 0 ||
+			Q_stricmp(menu->window.name, "datapadInventoryMenu") == 0 ||
+			Q_stricmp(menu->window.name, "datapadWeaponsMenu") == 0))
+		{
+			// Execute the appropriate console command
+			if (key == A_MWHEELUP || key == A_CURSOR_UP || key == A_KP_8)
+			{
+				if (Q_stricmp(menu->window.name, "datapadForcePowersMenu") == 0)
+				{
+					DC->executeText(EXEC_NOW, "dpforceprev\n");
+				}
+				else if (Q_stricmp(menu->window.name, "datapadInventoryMenu") == 0)
+				{
+					DC->executeText(EXEC_NOW, "dpinvprev\n");
+				}
+				else if (Q_stricmp(menu->window.name, "datapadWeaponsMenu") == 0)
+				{
+					DC->executeText(EXEC_NOW, "dpweapprev\n");
+				}
+			}
+			else if (key == A_MWHEELDOWN || key == A_CURSOR_DOWN || key == A_KP_2)
+			{
+				if (Q_stricmp(menu->window.name, "datapadForcePowersMenu") == 0)
+				{
+					DC->executeText(EXEC_NOW, "dpforcenext\n");
+				}
+				else if (Q_stricmp(menu->window.name, "datapadInventoryMenu") == 0)
+				{
+					DC->executeText(EXEC_NOW, "dpinvnext\n");
+				}
+				else if (Q_stricmp(menu->window.name, "datapadWeaponsMenu") == 0)
+				{
+					DC->executeText(EXEC_NOW, "dpweapnext\n");
+				}
+			}
+			inHandler = qfalse;
+			return;
+		}
+	}
+	
 	if (g_editingField && down)
 	{
 		if (!Item_TextField_HandleKey(g_editItem, key))
@@ -11604,6 +11675,71 @@ void Menu_HandleKey(menuDef_t *menu, int key, qboolean down)
 		}
 	}
 
+	// Handle mouse clicks in DataPad listbox areas
+	if (down && key == A_MOUSE1)
+	{
+		if (menu && Q_stricmp(menu->window.name, "datapadForcePowersMenu") == 0)
+		{
+			// Use the same constants as cg_main.cpp
+			const int listboxX = DATAPAD_LISTBOX_X;
+			const int listboxY = DATAPAD_LISTBOX_Y;
+			const int listboxWidth = DATAPAD_LISTBOX_WIDTH;
+			const int listboxHeight = DATAPAD_LISTBOX_HEIGHT;
+			const int lineHeight = DATAPAD_LISTBOX_LINEHEIGHT;
+			
+			int mouseX = (int)DC->cursorx;
+			int mouseY = (int)DC->cursory;
+			
+			if (mouseX >= listboxX && mouseX <= listboxX + listboxWidth &&
+				mouseY >= listboxY && mouseY <= listboxY + listboxHeight)
+			{
+				Com_Printf("Click in datapad listbox area at %d,%d\n", mouseX, mouseY);
+				
+				// Check if we're clicking on an ownerdraw with doubleclick
+				for (i = 0; i < menu->itemCount; i++)
+				{
+					itemDef_t *testItem = menu->items[i];
+					
+					if (testItem->type == ITEM_TYPE_OWNERDRAW && 
+						!testItem->disabled &&
+						(testItem->window.flags & WINDOW_VISIBLE) &&  // Only visible items
+						Rect_ContainsPoint(&testItem->window.rect, DC->cursorx, DC->cursory) &&
+						testItem->doubleClick)
+					{
+						Com_Printf("Found VISIBLE ownerdraw with doubleclick: %s\n", testItem->window.name ? testItem->window.name : "NULL");
+						
+						// Check for double-click
+						if (DC->realTime < lastButtonClickTime && 
+							lastButtonClicked == testItem)
+						{
+							Com_Printf("DATAPAD OWNERDRAW DOUBLE-CLICK!\n");
+							Item_RunScript(testItem, testItem->doubleClick);
+							lastButtonClickTime = 0;
+							lastButtonClicked = NULL;
+							inHandler = qfalse;
+							return;
+						}
+						else
+						{
+							Com_Printf("Datapad ownerdraw single click, setting lastClicked to %s\n", testItem->window.name ? testItem->window.name : "NULL");
+							lastButtonClickTime = DC->realTime + DOUBLE_CLICK_DELAY;
+							lastButtonClicked = testItem;
+						}
+						break;
+					}
+				}
+				
+				int clickedLine = (mouseY - listboxY) / lineHeight;
+				
+				// Navigate to that item by calling dpforcenext/prev multiple times
+				DC->setCVar("ui_datapadClickedLine", va("%d", clickedLine));
+				
+				inHandler = qfalse;
+				return;
+			}
+		}
+	}	
+
 	// get the item with focus
 	for (i = 0; i < menu->itemCount; i++)
 	{
@@ -11622,8 +11758,33 @@ void Menu_HandleKey(menuDef_t *menu, int key, qboolean down)
 
 	if (item != NULL)
 	{
+		
+		// Check for double-click on ownerdraw items BEFORE going to switch statement
+		if (down && (key == A_MOUSE1 || key == A_MOUSE2) && 
+			item->type == ITEM_TYPE_OWNERDRAW &&
+			Rect_ContainsPoint(&item->window.rect, DC->cursorx, DC->cursory))
+		{
+			
+			if (DC->realTime < lastButtonClickTime && 
+				lastButtonClicked == item &&
+				item->doubleClick)
+			{
+				Item_RunScript(item, item->doubleClick);
+				lastButtonClickTime = 0;
+				lastButtonClicked = NULL;
+				inHandler = qfalse;
+				return;  // Skip normal handling
+			}
+			else
+			{
+				lastButtonClickTime = DC->realTime + DOUBLE_CLICK_DELAY;
+				lastButtonClicked = item;
+				// Fall through to normal handling
+			}
+		}
+		
 		if (Item_HandleKey(item, key, down))
-//JLFLISTBOX
+	//JLFLISTBOX
 		{
 			// It is possible for an item to be disable after Item_HandleKey is run (like in Voice Chat)
 			if (!item->disabled)
@@ -11712,10 +11873,12 @@ void Menu_HandleKey(menuDef_t *menu, int key, qboolean down)
 
 		case A_MOUSE1:
 		case A_MOUSE2:
-			if (item)
-			{
+    		if (item)
+    		{
+				 
 				if (item->type == ITEM_TYPE_TEXT)
 				{
+
 					if (Rect_ContainsPoint(&item->window.rect, DC->cursorx, DC->cursory))
 					{
 						if ( item->action )
@@ -11734,6 +11897,7 @@ void Menu_HandleKey(menuDef_t *menu, int key, qboolean down)
 				}
 				else if (item->type == ITEM_TYPE_EDITFIELD || item->type == ITEM_TYPE_NUMERICFIELD)
 				{
+
 					if (Rect_ContainsPoint(&item->window.rect, DC->cursorx, DC->cursory))
 					{
 						item->cursorPos = 0;
@@ -11752,8 +11916,7 @@ void Menu_HandleKey(menuDef_t *menu, int key, qboolean down)
 */
 //JLFACCEPT
 				else if ( item->type == ITEM_TYPE_MULTI || item->type == ITEM_TYPE_YESNO || item->type == ITEM_TYPE_SLIDER || item->type == ITEM_TYPE_MULTIB || item->type == ITEM_TYPE_MULTISETTINGS)
-				{
-
+				{	
 					if (Item_HandleAccept(item))
 					{
 						//Item processed it overriding the menu processing
@@ -11770,11 +11933,32 @@ void Menu_HandleKey(menuDef_t *menu, int key, qboolean down)
 				}
 
 //END JLFACCEPT
-				else
+				else if ( item->type == ITEM_TYPE_BUTTON || item->type == ITEM_TYPE_OWNERDRAW )
 				{
+
 					if (Rect_ContainsPoint(&item->window.rect, DC->cursorx, DC->cursory))
-					{
-						Item_Action(item);
+						{			
+							// Check for double-click
+							if (DC->realTime < lastButtonClickTime && 
+								lastButtonClicked == item &&
+								item->doubleClick)
+							{
+				
+							// Execute double-click action
+							Item_RunScript(item, item->doubleClick);
+							// Reset tracking to prevent triple-click
+							lastButtonClickTime = 0;
+							lastButtonClicked = NULL;
+						}
+						else
+						{
+
+							// Execute normal single-click action
+							Item_Action(item);
+							// Update tracking for potential double-click
+							lastButtonClickTime = DC->realTime + DOUBLE_CLICK_DELAY;
+							lastButtonClicked = item;
+						}
 					}
 				}
 			}

@@ -243,6 +243,8 @@ typedef struct {
 	qhandle_t	messageLitOff;
 	qhandle_t	messageObjCircle;
 
+	qhandle_t	scrollbarThumb;
+
 	qhandle_t	batteryChargeShader;
 	qhandle_t	useableHint;
 
