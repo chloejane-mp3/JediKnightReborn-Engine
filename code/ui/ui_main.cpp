@@ -407,6 +407,7 @@ vmCvar_t	ui_char_color_blue;
 vmCvar_t	ui_PrecacheModels;
 vmCvar_t	ui_screenshotType;
 vmCvar_t	ui_scrollhidden;
+vmCvar_t	ui_datapadSelectedPowerID;
 
 static void UI_UpdateScreenshot( void )
 {
@@ -472,6 +473,7 @@ static cvarTable_t cvarTable[] =
 	{ &ui_screenshotType,		"ui_screenshotType",	"jpg", UI_UpdateScreenshot, CVAR_ARCHIVE },
 
 	{ &ui_scrollhidden,			"ui_scrollhidden",		"1", NULL, 0},
+	{ &ui_datapadSelectedPowerID, "ui_datapadSelectedPowerID", "0", NULL, 0},
 };
 
 #define FP_UPDATED_NONE -1

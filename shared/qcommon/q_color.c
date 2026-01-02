@@ -51,7 +51,7 @@ vec4_t colorTable[CT_MAX] =
 	{0.402f, 0.265f, 0.0f,  1},	// CT_VDKORANGE
 
 	{0.503f, 0.375f, 0.996f, 1},	// CT_VLTBLUE1
-	{0.367f, 0.261f, 0.722f, 1},	// CT_LTBLUE1
+	{0.53f, 0.89f, 0.91f, 1},		// CT_LTBLUE1
 	{0.199f, 0.0f,   0.398f, 1},	// CT_DKBLUE1
 	{0.160f, 0.117f, 0.324f, 1},	// CT_VDKBLUE1
 
