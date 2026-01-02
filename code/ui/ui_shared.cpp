@@ -11693,39 +11693,44 @@ if (down && (key == A_MWHEELUP || key == A_MWHEELDOWN || key == A_CURSOR_UP || k
 			if (mouseX >= listboxX && mouseX <= listboxX + listboxWidth &&
 				mouseY >= listboxY && mouseY <= listboxY + listboxHeight)
 			{
-				Com_Printf("Click in datapad listbox area at %d,%d\n", mouseX, mouseY);
-				
+
+
 				// Check if we're clicking on an ownerdraw with doubleclick
 				for (i = 0; i < menu->itemCount; i++)
 				{
 					itemDef_t *testItem = menu->items[i];
 					
-					if (testItem->type == ITEM_TYPE_OWNERDRAW && 
-						!testItem->disabled &&
-						(testItem->window.flags & WINDOW_VISIBLE) &&  // Only visible items
-						Rect_ContainsPoint(&testItem->window.rect, DC->cursorx, DC->cursory) &&
-						testItem->doubleClick)
+					if (testItem->type == ITEM_TYPE_OWNERDRAW)
 					{
-						Com_Printf("Found VISIBLE ownerdraw with doubleclick: %s\n", testItem->window.name ? testItem->window.name : "NULL");
-						
-						// Check for double-click
-						if (DC->realTime < lastButtonClickTime && 
-							lastButtonClicked == testItem)
+						if (!testItem->disabled &&
+							mouseX >= testItem->window.rect.x &&
+							mouseX <= testItem->window.rect.x + testItem->window.rect.w &&
+							mouseY >= testItem->window.rect.y &&
+							mouseY <= testItem->window.rect.y + testItem->window.rect.h &&
+							testItem->doubleClick)
 						{
-							Com_Printf("DATAPAD OWNERDRAW DOUBLE-CLICK!\n");
-							Item_RunScript(testItem, testItem->doubleClick);
-							lastButtonClickTime = 0;
-							lastButtonClicked = NULL;
-							inHandler = qfalse;
-							return;
+							
+							if (testItem->window.flags & WINDOW_VISIBLE)
+							{
+								
+								// Check for double-click
+								if (DC->realTime < lastButtonClickTime && 
+									lastButtonClicked == testItem)
+								{
+									Item_RunScript(testItem, testItem->doubleClick);
+									lastButtonClickTime = 0;
+									lastButtonClicked = NULL;
+									inHandler = qfalse;
+									return;
+								}
+								else
+								{
+									lastButtonClickTime = DC->realTime + DOUBLE_CLICK_DELAY;
+									lastButtonClicked = testItem;
+								}
+								i = menu->itemCount; 
+							}
 						}
-						else
-						{
-							Com_Printf("Datapad ownerdraw single click, setting lastClicked to %s\n", testItem->window.name ? testItem->window.name : "NULL");
-							lastButtonClickTime = DC->realTime + DOUBLE_CLICK_DELAY;
-							lastButtonClicked = testItem;
-						}
-						break;
 					}
 				}
 				
@@ -11757,32 +11762,7 @@ if (down && (key == A_MWHEELUP || key == A_MWHEELDOWN || key == A_CURSOR_UP || k
 	}
 
 	if (item != NULL)
-	{
-		
-		// Check for double-click on ownerdraw items BEFORE going to switch statement
-		if (down && (key == A_MOUSE1 || key == A_MOUSE2) && 
-			item->type == ITEM_TYPE_OWNERDRAW &&
-			Rect_ContainsPoint(&item->window.rect, DC->cursorx, DC->cursory))
-		{
-			
-			if (DC->realTime < lastButtonClickTime && 
-				lastButtonClicked == item &&
-				item->doubleClick)
-			{
-				Item_RunScript(item, item->doubleClick);
-				lastButtonClickTime = 0;
-				lastButtonClicked = NULL;
-				inHandler = qfalse;
-				return;  // Skip normal handling
-			}
-			else
-			{
-				lastButtonClickTime = DC->realTime + DOUBLE_CLICK_DELAY;
-				lastButtonClicked = item;
-				// Fall through to normal handling
-			}
-		}
-		
+	{		
 		if (Item_HandleKey(item, key, down))
 	//JLFLISTBOX
 		{
@@ -11794,7 +11774,6 @@ if (down && (key == A_MWHEELUP || key == A_MWHEELDOWN || key == A_CURSOR_UP || k
 			inHandler = qfalse;
 			return;
 		}
-
 	}
 
 	if (!down)
