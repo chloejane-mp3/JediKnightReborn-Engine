@@ -381,6 +381,8 @@ typedef struct itemDef_s {
 	const char	*mouseExit;					// mouse exit script
 	const char	*action;					// select script
 	const char	*doubleClick;				// add double click to buttons
+	const char	*back;						// add back button to menus
+
 //JLFACCEPT MPMOVED
 	const char  *accept;
 //JLFDPADSCRIPT MPMOVED

@@ -4265,9 +4265,7 @@ ItemParse_doubleClick
 ===============
 */
 qboolean ItemParse_doubleClick(itemDef_t *item)
-{
-	Com_Printf("=== ItemParse_doubleClick called for item type %d ===\n", item->type);
-	
+{	
 	// For listbox, store in typeData
 	if (item->type == ITEM_TYPE_LISTBOX)
 	{
@@ -4443,6 +4441,20 @@ ItemParse_action
 qboolean ItemParse_action( itemDef_t *item)
 {
 	if (!PC_Script_Parse(&item->action))
+	{
+		return qfalse;
+	}
+	return qtrue;
+}
+
+/*
+===============
+ItemParse_back
+===============
+*/
+qboolean ItemParse_back( itemDef_t *item)
+{
+	if (!PC_Script_Parse(&item->back))
 	{
 		return qfalse;
 	}
@@ -5021,6 +5033,7 @@ keywordHash_t itemParseKeywords[] = {
 	{"isSaber",			ItemParse_isSaber,			},
 	{"isSaber2",		ItemParse_isSaber2,			},
 	{"autowrapped",		ItemParse_autowrapped,		},
+	{"back",			ItemParse_back,				},
 	{"backcolor",		ItemParse_backcolor,		},
 	{"background",		ItemParse_background,		},
 	{"border",			ItemParse_border,			},
@@ -11589,7 +11602,29 @@ void Menu_HandleKey(menuDef_t *menu, int key, qboolean down)
 		return;
 	}
 
-if (down && (key == A_MWHEELUP || key == A_MWHEELDOWN || key == A_CURSOR_UP || key == A_CURSOR_DOWN || key == A_KP_8 || key == A_KP_2))
+	if (down && key == A_BACKSPACE)
+	{
+		if (menu)
+		{
+			// Execute back on the first visible ownerdraw that has a back script
+			for (i = 0; i < menu->itemCount; i++)
+			{
+				itemDef_t *testItem = menu->items[i];
+				
+				if (testItem->type == ITEM_TYPE_OWNERDRAW && 
+					testItem->back &&
+					!testItem->disabled &&
+					(testItem->window.flags & WINDOW_VISIBLE))
+				{
+					Item_RunScript(testItem, testItem->back);
+					inHandler = qfalse;
+					return;
+				}
+			}
+		}
+	}
+
+	if (down && (key == A_MWHEELUP || key == A_MWHEELDOWN || key == A_CURSOR_UP || key == A_CURSOR_DOWN || key == A_KP_8 || key == A_KP_2))
 	{
 		// Check if we're in a DataPad menu
 		if (menu && (
@@ -11676,7 +11711,7 @@ if (down && (key == A_MWHEELUP || key == A_MWHEELDOWN || key == A_CURSOR_UP || k
 	}
 
 	// Handle mouse clicks in DataPad listbox areas
-	if (down && key == A_MOUSE1)
+	if (down && (key == A_MOUSE1 || key == A_ENTER))
 	{
 		if (menu && Q_stricmp(menu->window.name, "datapadForcePowersMenu") == 0)
 		{
@@ -11717,11 +11752,14 @@ if (down && (key == A_MWHEELUP || key == A_MWHEELDOWN || key == A_CURSOR_UP || k
 								if (DC->realTime < lastButtonClickTime && 
 									lastButtonClicked == testItem)
 								{
+									if (down && key == A_ENTER || key == A_MOUSE1)
+									{
 									Item_RunScript(testItem, testItem->doubleClick);
 									lastButtonClickTime = 0;
 									lastButtonClicked = NULL;
 									inHandler = qfalse;
 									return;
+									}
 								}
 								else
 								{
@@ -11729,6 +11767,11 @@ if (down && (key == A_MWHEELUP || key == A_MWHEELDOWN || key == A_CURSOR_UP || k
 									lastButtonClicked = testItem;
 								}
 								i = menu->itemCount; 
+							}
+
+							if (down && key == A_ENTER)
+							{
+								Item_RunScript(testItem, testItem->doubleClick);
 							}
 						}
 					}
