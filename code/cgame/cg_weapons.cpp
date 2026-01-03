@@ -1431,6 +1431,23 @@ const char *weaponDesc[13] =
 "CONCUSSION_DESC",
 };
 
+const char *weaponName[13] =
+{
+"SABER_NAME",
+"NEW_BLASTER_PISTOL_NAME",
+"BLASTER_RIFLE_NAME",
+"DISRUPTOR_RIFLE_NAME",
+"BOWCASTER_NAME",
+"HEAVYREPEATER_NAME",
+"DEMP2_NAME",
+"FLECHETTE_NAME",
+"MERR_SONN_NAME",
+"THERMAL_DETONATOR_NAME",
+"TRIP_MINE_NAME",
+"DET_PACK_NAME",
+"CONCUSSION_NAME",
+};
+
 /*
 ===================
 CG_DrawDataPadWeaponSelect
@@ -1442,10 +1459,9 @@ void CG_DrawDataPadWeaponSelect( void )
 {
 	int				i;
 	int				weaponBitFlag,weaponCount,weaponSelectI;
-	int				holdX;
-	int				sideLeftIconCnt,sideRightIconCnt;
-	int				holdCount,iconCnt;
 	char			text[1024]={0};
+	char			textname[1024]={0};
+
 	qboolean drewConc = qfalse;
 
 	// showing weapon select clears pickup item display, but not the blend blob
@@ -1466,26 +1482,6 @@ void CG_DrawDataPadWeaponSelect( void )
 	if (weaponCount == 0)	// If no weapons, don't display
 	{
 		return;
-	}
-
-	const short sideMax = 3;	// Max number of icons on the side
-
-	// Calculate how many icons will appear to either side of the center one
-	holdCount = weaponCount - 1;	// -1 for the center icon
-	if (holdCount == 0)			// No icons to either side
-	{
-		sideLeftIconCnt = 0;
-		sideRightIconCnt = 0;
-	}
-	else if (weaponCount > (2*sideMax))	// Go to the max on each side
-	{
-		sideLeftIconCnt = sideMax;
-		sideRightIconCnt = sideMax;
-	}
-	else							// Less than max, so do the calc
-	{
-		sideLeftIconCnt = holdCount/2;
-		sideRightIconCnt = holdCount - sideLeftIconCnt;
 	}
 
 	// This seems to be a problem if datapad comes up too early
@@ -1512,74 +1508,12 @@ void CG_DrawDataPadWeaponSelect( void )
 		weaponSelectI = 13;
 	}
 
-	const int smallIconSize = 40;
-	const int bigIconSize = 80;
-	const int bigPad = 64;
-	const int pad = 32;
+	const int bigIconWidth = 340;
+	const int bigIconHeight = 315;
+	const int graphicXPos = 315;
+	const int graphicYPos = 14;
 
-	const int centerXPos = 320;
-	const int graphicYPos = 340;
-
-
-	// Left side ICONS
-	// Work backwards from current icon
-	holdX = centerXPos - ((bigIconSize/2) + bigPad + smallIconSize);
-
-	cgi_R_SetColor( colorTable[CT_WHITE] );
-	for (iconCnt=1;iconCnt<(sideLeftIconCnt+1);weaponSelectI--)
-	{
-		if ( weaponSelectI == WP_CONCUSSION )
-		{
-			weaponSelectI--;
-		}
-		else if ( weaponSelectI == WP_FLECHETTE && !drewConc && cg.DataPadWeaponSelect != WP_CONCUSSION )
-		{
-			weaponSelectI = WP_CONCUSSION;
-		}
-
-		if (weaponSelectI<1)
-		{
-			weaponSelectI = 13;
-		}
-
-		if ( !(weaponBitFlag & ( 1 << weaponSelectI )))	// Does he have this weapon?
-		{
-			if ( weaponSelectI == WP_CONCUSSION )
-			{
-				drewConc = qtrue;
-				weaponSelectI = WP_ROCKET_LAUNCHER;
-			}
-			continue;
-		}
-
-		++iconCnt;					// Good icon
-
-		if (weaponData[weaponSelectI].weaponIcon[0])
-		{
-			weaponInfo_t	*weaponInfo;
-			CG_RegisterWeapon( weaponSelectI );
-			weaponInfo = &cg_weapons[weaponSelectI];
-
-			if (!CG_WeaponCheck(weaponSelectI))
-			{
-				CG_DrawPic( holdX, graphicYPos, smallIconSize, smallIconSize, weaponInfo->weaponIconNoAmmo );
-			}
-			else
-			{
-				CG_DrawPic( holdX, graphicYPos, smallIconSize, smallIconSize, weaponInfo->weaponIcon );
-			}
-
-			holdX -= (smallIconSize+pad);
-		}
-
-		if ( weaponSelectI == WP_CONCUSSION )
-		{
-			drewConc = qtrue;
-			weaponSelectI = WP_ROCKET_LAUNCHER;
-		}
-	}
-
-	// Current Center Icon
+	// Draw Icon
 	cgi_R_SetColor(colorTable[CT_WHITE]);
 
 	if (weaponData[cg.DataPadWeaponSelect].weaponIcon[0])
@@ -1591,11 +1525,11 @@ void CG_DrawDataPadWeaponSelect( void )
 			// Draw graphic to show weapon has ammo or no ammo
 		if (!CG_WeaponCheck(cg.DataPadWeaponSelect))
 		{
-			CG_DrawPic( centerXPos-(bigIconSize/2), (graphicYPos-((bigIconSize-smallIconSize)/2))+10, bigIconSize, bigIconSize, weaponInfo->weaponIconNoAmmo );
+			CG_DrawPic( graphicXPos, graphicYPos, bigIconWidth, bigIconHeight, weaponInfo->weaponIconNoAmmo );
 		}
 		else
 		{
-			CG_DrawPic( centerXPos-(bigIconSize/2), (graphicYPos-((bigIconSize-smallIconSize)/2))+10, bigIconSize, bigIconSize, weaponInfo->weaponIcon );
+			CG_DrawPic( graphicXPos, graphicYPos, bigIconWidth, bigIconHeight, weaponInfo->weaponIconNoAmmo );
 		}
 	}
 
@@ -1613,79 +1547,42 @@ void CG_DrawDataPadWeaponSelect( void )
 		weaponSelectI = 1;
 	}
 
-	// Right side ICONS
-	// Work forwards from current icon
-	cgi_R_SetColor(colorTable[CT_WHITE]);
-	holdX = centerXPos + (bigIconSize/2) + bigPad;
-	for (iconCnt=1;iconCnt<(sideRightIconCnt+1);weaponSelectI++)
-	{
-		if ( weaponSelectI == WP_CONCUSSION )
-		{
-			weaponSelectI++;
-		}
-		else if ( weaponSelectI == WP_ROCKET_LAUNCHER && !drewConc && cg.DataPadWeaponSelect != WP_CONCUSSION )
-		{
-			weaponSelectI = WP_CONCUSSION;
-		}
-		if (weaponSelectI>13)
-		{
-			weaponSelectI = 1;
-		}
-
-		if ( !(weaponBitFlag & ( 1 << weaponSelectI )))	// Does he have this weapon?
-		{
-			if ( weaponSelectI == WP_CONCUSSION )
-			{
-				drewConc = qtrue;
-				weaponSelectI = WP_FLECHETTE;
-			}
-			continue;
-		}
-
-		++iconCnt;					// Good icon
-
-		if (weaponData[weaponSelectI].weaponIcon[0])
-		{
-			weaponInfo_t	*weaponInfo;
-			CG_RegisterWeapon( weaponSelectI );
-			weaponInfo = &cg_weapons[weaponSelectI];
-
-			// Draw graphic to show weapon has ammo or no ammo
-			if (!CG_WeaponCheck(i))
-			{
-				CG_DrawPic( holdX, graphicYPos, smallIconSize, smallIconSize, weaponInfo->weaponIconNoAmmo );
-			}
-			else
-			{
-				CG_DrawPic( holdX, graphicYPos, smallIconSize, smallIconSize, weaponInfo->weaponIcon );
-			}
-
-
-			holdX += (smallIconSize+pad);
-		}
-		if ( weaponSelectI == WP_CONCUSSION )
-		{
-			drewConc = qtrue;
-			weaponSelectI = WP_FLECHETTE;
-		}
-	}
-
+	
 	// Print the weapon description
 	cgi_SP_GetStringTextString( va("SP_INGAME_%s",weaponDesc[cg.DataPadWeaponSelect-1]), text, sizeof(text) );
 
+	cgi_SP_GetStringTextString( va("SP_INGAME_%s",weaponName[cg.DataPadWeaponSelect-1]), textname, sizeof(text) );
+
+	if (textname[0])
+	{
+		const float textScale = 0.7f;
+		const int font = CG_MagicFontToReal(2);
+		vec4_t color;
+		memcpy(color, colorTable[CT_WHITE], sizeof(vec4_t));
+
+		int width = cgi_R_Font_StrLenPixels(textname, font, textScale);
+
+		const int centerX = 325;
+		const int textY = 95;
+
+		int textnamePosX = centerX - width / 2;
+
+		cgi_R_Font_DrawString(textnamePosX, textY, textname, color, font, -1, textScale);
+	}
+	
 	if (text[0])
 	{
-		const short textboxXPos = 40;
-		const short textboxYPos = 60;
-		const int	textboxWidth = 560;
-		const int	textboxHeight = 300;
-		const float	textScale = 1.0f;
+		const short textboxXPos = 50;
+		const short textboxYPos = 150;
+		const int	textboxWidth = 275;
+		const int	textboxHeight = 235;
+		const float	textScale = 0.6f;
 
 		CG_DisplayBoxedText(
 			textboxXPos, textboxYPos,
 			textboxWidth, textboxHeight,
 			text,
-			CG_MagicFontToReal(4),
+			CG_MagicFontToReal(2),
 			textScale,
 			colorTable[CT_WHITE]
 				);

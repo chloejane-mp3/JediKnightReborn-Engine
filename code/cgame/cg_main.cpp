@@ -3980,9 +3980,9 @@ void CG_DrawForceSelect( void )
 	// This only a temp solution.
 	if (cgi_SP_GetStringTextString( showPowersName[cg.forcepowerSelect], text, sizeof(text) ))
 	{
-			int w = cgi_R_Font_StrLenPixels(text, cgs.media.qhFontSmall, 1.0f);
+			int w = cgi_R_Font_StrLenPixels(text, cgs.media.qhFontMedium, 1.0f);
 			int x = ( SCREEN_WIDTH - w ) / 2;
-			cgi_R_Font_DrawString(x, (SCREEN_HEIGHT - 24) + yOffset, text, colorTable[CT_ICON_BLUE], cgs.media.qhFontSmall, -1, 1.0f);
+			cgi_R_Font_DrawString(x, (SCREEN_HEIGHT - 24) + yOffset, text, colorTable[CT_ICON_BLUE], cgs.media.qhFontMedium, -1, 1.0f);
 	}
 }
 
