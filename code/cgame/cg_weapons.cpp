@@ -32,6 +32,8 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 
 extern void CG_LightningBolt( centity_t *cent, vec3_t origin );
 
+qboolean CG_WeaponSelectable( int i, int original, qboolean dpMode );
+
 #define	PHASER_HOLDFRAME	2
 extern void G_SoundOnEnt( gentity_t *ent, soundChannel_t channel, const char *soundPath );
 const char *CG_DisplayBoxedText(int iBoxX, int iBoxY, int iBoxWidth, int iBoxHeight,
@@ -1424,11 +1426,11 @@ const char *weaponDesc[13] =
 "HEAVYREPEATER_DESC",
 "DEMP2_DESC",
 "FLECHETTE_DESC",
+"CONCUSSION_DESC",
 "MERR_SONN_DESC",
 "THERMAL_DETONATOR_DESC",
 "TRIP_MINE_DESC",
 "DET_PACK_DESC",
-"CONCUSSION_DESC",
 };
 
 const char *weaponName[13] =
@@ -1441,12 +1443,70 @@ const char *weaponName[13] =
 "HEAVYREPEATER_NAME",
 "DEMP2_NAME",
 "FLECHETTE_NAME",
+"CONCUSSION_NAME",
 "MERR_SONN_NAME",
 "THERMAL_DETONATOR_NAME",
 "TRIP_MINE_NAME",
 "DET_PACK_NAME",
-"CONCUSSION_NAME",
 };
+
+const char *weaponNameFull[13] =
+{
+"SABER_NAME_FULL",
+"NEW_BLASTER_PISTOL_NAME_FULL",
+"BLASTER_RIFLE_NAME_FULL",
+"DISRUPTOR_RIFLE_NAME_FULL",
+"BOWCASTER_NAME_FULL",
+"HEAVYREPEATER_NAME_FULL",
+"DEMP2_NAME_FULL",
+"FLECHETTE_NAME_FULL",
+"CONCUSSION_NAME_FULL",
+"MERR_SONN_NAME_FULL",
+"THERMAL_DETONATOR_NAME_FULL",
+"TRIP_MINE_NAME_FULL",
+"DET_PACK_NAME_FULL",
+};
+
+
+const char *datapadWeaponModels[13] =
+{
+"models/weapons2/saber/saber_w.glm",
+"models/weapons2/blaster_pistol/blaster_pistol_w.glm",
+"models/weapons2/blaster_r/blaster_w.glm",
+"models/weapons2/disruptor/disruptor_w.glm",
+"models/weapons2/bowcaster/bowcaster_w.glm",
+"models/weapons2/heavy_repeater/heavy_repeater_w.glm",
+"models/weapons2/demp2/demp2_w.glm",
+"models/weapons2/golan_arms/golan_arms_w.glm",
+"models/weapons2/concussion/c_rifle_w.glm",
+"models/weapons2/merr_sonn/merr_sonn_w.glm",
+"models/weapons2/thermal/thermal_w.glm",
+"models/weapons2/laser_trap/laser_trap_w.glm",
+"models/weapons2/detpack/det_pack_w.glm",
+};
+
+/*
+===================
+CG_UpdateDataPadWeaponCvar
+
+Updates the cvar that the UI uses to display the weapon model
+Call this whenever the datapad weapon selection changes
+===================
+*/
+void CG_UpdateDataPadWeaponCvar( void )
+{
+	int weaponIndex = cg.DataPadWeaponSelect - 1;
+	
+	// Validate weapon index
+	if (weaponIndex < 0 || weaponIndex >= 13)
+	{
+		return;
+	}
+	
+	// Set the cvar to the current weapon model path
+	cgi_Cvar_Set("cg_datapadWeaponModel", datapadWeaponModels[weaponIndex]);
+
+	}
 
 /*
 ===================
@@ -1508,30 +1568,7 @@ void CG_DrawDataPadWeaponSelect( void )
 		weaponSelectI = 13;
 	}
 
-	const int bigIconWidth = 340;
-	const int bigIconHeight = 315;
-	const int graphicXPos = 315;
-	const int graphicYPos = 14;
-
-	// Draw Icon
-	cgi_R_SetColor(colorTable[CT_WHITE]);
-
-	if (weaponData[cg.DataPadWeaponSelect].weaponIcon[0])
-	{
-		weaponInfo_t	*weaponInfo;
-		CG_RegisterWeapon( cg.DataPadWeaponSelect );
-		weaponInfo = &cg_weapons[cg.DataPadWeaponSelect];
-
-			// Draw graphic to show weapon has ammo or no ammo
-		if (!CG_WeaponCheck(cg.DataPadWeaponSelect))
-		{
-			CG_DrawPic( graphicXPos, graphicYPos, bigIconWidth, bigIconHeight, weaponInfo->weaponIconNoAmmo );
-		}
-		else
-		{
-			CG_DrawPic( graphicXPos, graphicYPos, bigIconWidth, bigIconHeight, weaponInfo->weaponIconNoAmmo );
-		}
-	}
+	CG_UpdateDataPadWeaponCvar();
 
 	if ( cg.DataPadWeaponSelect == WP_CONCUSSION )
 	{
@@ -1562,7 +1599,7 @@ void CG_DrawDataPadWeaponSelect( void )
 
 		int width = cgi_R_Font_StrLenPixels(textname, font, textScale);
 
-		const int centerX = 325;
+		const int centerX = 320;
 		const int textY = 95;
 
 		int textnamePosX = centerX - width / 2;
@@ -1589,6 +1626,293 @@ void CG_DrawDataPadWeaponSelect( void )
 	}
 
 	cgi_R_SetColor( NULL );
+}
+
+/*
+===================
+CG_DrawDataPadWeaponInventory
+===================
+*/
+
+static int g_weaponScrollOffset = 0;
+static int g_weaponMaxScroll = 0;
+
+static vmCvar_t ui_datapadWeaponClickedLine;
+static vmCvar_t ui_datapadSelectedWeaponID; 
+
+// Listbox dimensions - THESE MUST MATCH IN BOTH DRAW AND UI CODE
+#define DATAPAD_WEAPON_LISTBOX_X 70
+#define DATAPAD_WEAPON_LISTBOX_Y 110
+#define DATAPAD_WEAPON_LISTBOX_WIDTH 500
+#define DATAPAD_WEAPON_LISTBOX_HEIGHT 250
+#define DATAPAD_WEAPON_LISTBOX_LINEHEIGHT 25
+#define DATAPAD_WEAPON_LISTBOX_MAXITEMS 10
+
+void CG_DrawDataPadWeaponInventory()
+{
+	const int startX = DATAPAD_WEAPON_LISTBOX_X;
+	const int startY = DATAPAD_WEAPON_LISTBOX_Y;
+	const int lineHeight = DATAPAD_WEAPON_LISTBOX_LINEHEIGHT;
+	constexpr float textScale = 0.7f;
+	const int maxVisibleItems = DATAPAD_WEAPON_LISTBOX_MAXITEMS;
+	const int listboxWidth = DATAPAD_WEAPON_LISTBOX_WIDTH;
+	const int listboxHeight = DATAPAD_WEAPON_LISTBOX_HEIGHT;
+	
+	int validWeapons[WP_NUM_WEAPONS];
+	int totalValidWeapons = 0;
+	char weaponNameFullText[1024];
+	vec4_t textColor;
+	vec4_t bgColor;
+	int weaponBitFlag;
+	
+	if (!cg.snap)
+	{
+		return;
+	}
+	
+	weaponBitFlag = cg.snap->ps.stats[STAT_WEAPONS];
+	
+	for (int i = 1; i < WP_NUM_WEAPONS; i++)
+	{
+		if (weaponBitFlag & (1 << i))
+		{
+			validWeapons[totalValidWeapons++] = i;
+		}
+	}
+	
+	// Apply the concussion rifle ordering hack to match CG_DPNextWeapon_f navigation
+	// This reorders the array so Concussion (13) appears between Flechette (8) and Rocket Launcher (9)
+	if (totalValidWeapons > 0)
+	{
+		// Find indices of the weapons involved in the hack
+		int flechetteIdx = -1;
+		int concussionIdx = -1;
+		
+		for (int i = 0; i < totalValidWeapons; i++)
+		{
+			if (validWeapons[i] == WP_FLECHETTE)
+			{
+				flechetteIdx = i;
+			}
+			else if (validWeapons[i] == WP_CONCUSSION)
+			{
+				concussionIdx = i;
+			}
+		}
+		
+		// If both weapons exist and concussion is not already after flechette, reorder
+		if (flechetteIdx != -1 && concussionIdx != -1 && concussionIdx != flechetteIdx + 1)
+		{
+			// Store the concussion weapon ID
+			int concussionWeapon = validWeapons[concussionIdx];
+			
+			// Remove concussion from its current position
+			for (int i = concussionIdx; i < totalValidWeapons - 1; i++)
+			{
+				validWeapons[i] = validWeapons[i + 1];
+			}
+			
+			// Shift everything after flechette down one spot
+			for (int i = totalValidWeapons - 1; i > flechetteIdx + 1; i--)
+			{
+				validWeapons[i] = validWeapons[i - 1];
+			}
+			
+			// Insert concussion right after flechette
+			validWeapons[flechetteIdx + 1] = concussionWeapon;
+		}
+	}
+	
+	if (totalValidWeapons == 0)
+	{
+		cgi_R_SetColor(colorTable[CT_WHITE]);
+		cgi_R_Font_DrawString(startX, startY, "No weapons available", colorTable[CT_WHITE], 
+							  cgs.media.qhFontMedium, -1, textScale);
+		return;
+	}
+	
+	static qboolean cvarRegistered = qfalse;
+	if (!cvarRegistered)
+	{
+		cgi_Cvar_Register(&ui_datapadWeaponClickedLine, "ui_datapadWeaponClickedLine", "-1", 0);
+		cgi_Cvar_Register(&ui_datapadSelectedWeaponID, "ui_datapadSelectedWeaponID", "-1", 0);
+		cvarRegistered = qtrue;
+	}
+	cgi_Cvar_Update(&ui_datapadWeaponClickedLine);
+	cgi_Cvar_Update(&ui_datapadSelectedWeaponID);
+	
+	if (cg.DataPadWeaponSelect >= WP_SABER && cg.DataPadWeaponSelect < WP_NUM_WEAPONS)
+	{
+		cgi_Cvar_Set("ui_datapadSelectedWeaponID", va("%d", cg.DataPadWeaponSelect));
+	}
+	
+	static int lastClickedLine = -1;
+	int clickedLine = ui_datapadWeaponClickedLine.integer;
+	
+	if (clickedLine >= 0 && clickedLine != lastClickedLine)
+	{
+		int targetIndex = g_weaponScrollOffset + clickedLine;
+		
+		if (targetIndex >= 0 && targetIndex < totalValidWeapons)
+		{
+			int clickedWeaponID = validWeapons[targetIndex];
+			
+			cg.DataPadWeaponSelect = clickedWeaponID;
+			cgi_S_StartSound(NULL, 0, CHAN_AUTO, cgs.media.selectSound2);
+			
+			cgi_Cvar_Set("ui_datapadSelectedWeaponID", va("%d", clickedWeaponID));
+			CG_UpdateDataPadWeaponCvar();
+		}
+		
+		lastClickedLine = clickedLine;
+		
+		cgi_Cvar_Set("ui_datapadWeaponClickedLine", "-1");
+	}
+	
+	if (totalValidWeapons > maxVisibleItems)
+	{
+		g_weaponMaxScroll = totalValidWeapons - maxVisibleItems;
+	}
+	else
+	{
+		g_weaponMaxScroll = 0;
+	}
+	
+	int selectedIndex = -1;
+	
+	for (int i = 0; i < totalValidWeapons; i++)
+	{
+		if (validWeapons[i] == cg.DataPadWeaponSelect)
+		{
+			selectedIndex = i;
+			break;
+		}
+	}
+	
+	if (selectedIndex >= 0)
+	{
+		if (selectedIndex < g_weaponScrollOffset)
+		{
+			g_weaponScrollOffset = selectedIndex;
+		}
+		else if (selectedIndex >= g_weaponScrollOffset + maxVisibleItems)
+		{
+			g_weaponScrollOffset = selectedIndex - maxVisibleItems + 1;
+		}
+	}
+	
+	if (g_weaponScrollOffset < 0)
+	{
+		g_weaponScrollOffset = 0;
+	}
+	if (totalValidWeapons > maxVisibleItems)
+	{
+		int maxScroll = totalValidWeapons - maxVisibleItems;
+		if (g_weaponScrollOffset > maxScroll)
+		{
+			g_weaponScrollOffset = maxScroll;
+		}
+	}
+	else
+	{
+		g_weaponScrollOffset = 0;
+	}
+	
+	int endIndex = g_weaponScrollOffset + maxVisibleItems;
+	if (endIndex > totalValidWeapons)
+	{
+		endIndex = totalValidWeapons;
+	}
+	
+	for (int i = g_weaponScrollOffset; i < endIndex; i++)
+	{
+		int weaponID = validWeapons[i];
+		int displayIndex = i - g_weaponScrollOffset;
+		int y = startY + displayIndex * lineHeight;
+		
+		// Ensure weaponID is valid
+		if (weaponID < 1 || weaponID >= WP_NUM_WEAPONS)
+		{
+			continue;
+		}
+		
+		// Get the localized weapon name (weaponName array is 0-indexed, weapon IDs start at 1)
+		if (weaponID - 1 >= 0 && weaponID - 1 < 13)
+		{
+			cgi_SP_GetStringTextString(va("SP_INGAME_%s", weaponNameFull[weaponID - 1]), 
+										weaponNameFullText, sizeof(weaponNameFullText));
+		}
+		else
+		{
+			Com_sprintf(weaponNameFullText, sizeof(weaponNameFullText), "Weapon %d", weaponID);
+		}
+		
+		const qboolean isSelected = (weaponID == cg.DataPadWeaponSelect) ? qtrue : qfalse;
+		
+		const qboolean hasAmmo = (CG_WeaponCheck(weaponID) != 0) ? qtrue : qfalse;
+		
+		if (isSelected)
+		{
+			memcpy(bgColor, colorTable[CT_LTBLUE1], sizeof(vec4_t));
+			bgColor[3] = 0.5f;
+			CG_FillRect(startX - 2, y + 5, listboxWidth - 6, lineHeight - 2, bgColor);
+		}
+		
+		if (isSelected)
+		{
+			memcpy(textColor, colorTable[CT_WHITE], sizeof(vec4_t));
+		}
+		else if (!hasAmmo)
+		{
+			memcpy(textColor, colorTable[CT_DKGREY], sizeof(vec4_t));
+		}
+		else
+		{
+			memcpy(textColor, colorTable[CT_WHITE], sizeof(vec4_t));
+		}
+		
+		if (weaponNameFullText[0])
+		{
+			int textX = startX;
+			cgi_R_Font_DrawString(textX, y + 4, weaponNameFullText, textColor, 
+								  cgs.media.qhFontMedium, -1, textScale);
+		}
+		
+		// Draw ammo count
+		if (weaponID != WP_SABER) // Saber doesn't use ammo
+		{
+			int ammoIndex = weaponData[weaponID].ammoIndex;
+			int currentAmmo = cg.snap->ps.ammo[ammoIndex];
+			
+			char ammoText[32];
+			Com_sprintf(ammoText, sizeof(ammoText), "Ammo: %d", currentAmmo);
+			
+			cgi_R_Font_DrawString(startX + listboxWidth - 80, y + 4, ammoText, textColor, 
+								  cgs.media.qhFontMedium, -1, textScale);
+		}
+
+		else
+		{
+			cgi_R_Font_DrawString(startX + listboxWidth - 80, y + 4, "Ammo: N/A", textColor, 
+								  cgs.media.qhFontMedium, -1, textScale);
+		}
+	}
+	
+	// Draw scroll indicators if needed
+	if (totalValidWeapons > maxVisibleItems)
+	{
+		cgi_R_SetColor(colorTable[CT_WHITE]);
+		
+		// Draw scrollbar
+		int scrollbarHeight = listboxHeight - 10;
+		int scrollbarThumbHeight = 64;
+		
+		int scrollbarThumbPos = (g_weaponScrollOffset * (scrollbarHeight - (scrollbarThumbHeight/2))) / 
+								(totalValidWeapons - maxVisibleItems);
+		
+		// Scrollbar thumb
+		CG_DrawPic(startX + listboxWidth - 15, startY + scrollbarThumbPos - 5, 32, scrollbarThumbHeight, cgs.media.scrollbarThumb);
+	}
 }
 
 /*
@@ -2192,6 +2516,7 @@ void CG_DPNextWeapon_f( void ) {
 		else
 		{
 			cg.DataPadWeaponSelect++;
+			CG_UpdateDataPadWeaponCvar();
 		}
 
 		if ( cg.DataPadWeaponSelect < FIRST_WEAPON || cg.DataPadWeaponSelect > MAX_PLAYER_WEAPONS) {
@@ -2250,6 +2575,7 @@ void CG_DPPrevWeapon_f( void )
 		else
 		{
 			cg.DataPadWeaponSelect--;
+			CG_UpdateDataPadWeaponCvar();
 		}
 
 		if ( cg.DataPadWeaponSelect < FIRST_WEAPON || cg.DataPadWeaponSelect > MAX_PLAYER_WEAPONS)
@@ -2264,6 +2590,8 @@ void CG_DPPrevWeapon_f( void )
 	}
 
 	cg.DataPadWeaponSelect = original;
+
+	
 }
 
 /*

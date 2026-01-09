@@ -138,6 +138,7 @@ static void		UI_UpdateSaberHilt( qboolean secondSaber );
 //static void		UI_UpdateSaberColor( qboolean secondSaber );
 static void		UI_InitWeaponSelect( void );
 static void		UI_WeaponHelpActive( void );
+void			UI_UpdateDatapadWeapon( void );	
 
 #ifndef JK2_MODE
 static void		UI_UpdateFightingStyle ( void );
@@ -408,6 +409,7 @@ vmCvar_t	ui_PrecacheModels;
 vmCvar_t	ui_screenshotType;
 vmCvar_t	ui_scrollhidden;
 vmCvar_t	ui_datapadSelectedPowerID;
+vmCvar_t	cg_datapadWeaponModel;
 
 static void UI_UpdateScreenshot( void )
 {
@@ -474,6 +476,7 @@ static cvarTable_t cvarTable[] =
 
 	{ &ui_scrollhidden,			"ui_scrollhidden",		"1", NULL, 0},
 	{ &ui_datapadSelectedPowerID, "ui_datapadSelectedPowerID", "0", NULL, 0},
+	{ &cg_datapadWeaponModel,	"cg_datapadWeaponModel", "models/weapons2/saber/saber_w.glm", NULL, 0},
 };
 
 #define FP_UPDATED_NONE -1
@@ -1288,6 +1291,10 @@ static qboolean UI_RunMenuScript ( const char **args )
 				UI_ResetSaberCvars();
 			}
     	}
+		else if (Q_stricmp(name, "updatedatapadweapon") == 0)
+		{
+			UI_UpdateDatapadWeapon();
+		}
 #ifndef JK2_MODE
 		else if (Q_stricmp(name, "updatefightingstylechoices") == 0)
 		{
@@ -3861,11 +3868,12 @@ static void UI_OwnerDraw(float x, float y, float w, float h, float text_x, float
 			ui.Draw_DataPad(DP_HUD);
 			ui.Draw_DataPad(DP_FORCEPOWERS);
 			break;
-		
 		case UI_DP_FORCEINVENTORY:
 			ui.Draw_DataPad(DP_FORCEINVENTORY);
 			break;
-
+		case UI_DP_WEAPONINVENTORY:
+			ui.Draw_DataPad(DP_WEAPONINVENTORY);
+			break;
 		case UI_ALLMAPS_SELECTION://saved game thumbnail
 
 			int levelshot;
@@ -6321,6 +6329,36 @@ static void UI_UpdateCharacter( qboolean changedModel )
 	}
 	UI_UpdateCharacterSkin();
 }
+
+void UI_UpdateDatapadWeapon( void )
+{
+	menuDef_t *menu;
+	itemDef_t *item;
+
+	menu = Menu_GetFocused();
+
+	if (!menu)
+	{
+		return;
+	}
+
+	item = (itemDef_s *) Menu_FindItemByName(menu, "weaponmodel");
+
+	if (!item)
+	{
+		return;
+	}
+
+	const char *weaponModel = Cvar_VariableString("cg_datapadWeaponModel");
+	
+	if (!weaponModel || !weaponModel[0])
+	{
+		return;
+	}
+
+	ItemParse_asset_model_go( item, weaponModel );
+}
+
 
 void UI_UpdateSaberType( void )
 {

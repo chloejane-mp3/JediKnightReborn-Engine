@@ -48,6 +48,15 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #define DATAPAD_LISTBOX_LINEHEIGHT 25
 #define DATAPAD_LISTBOX_MAXITEMS 10
 
+#define DATAPAD_WEAPON_LISTBOX_X 70
+#define DATAPAD_WEAPON_LISTBOX_Y 110
+#define DATAPAD_WEAPON_LISTBOX_WIDTH 500
+#define DATAPAD_WEAPON_LISTBOX_HEIGHT 250
+#define DATAPAD_WEAPON_LISTBOX_LINEHEIGHT 25
+#define DATAPAD_WEAPON_LISTBOX_MAXITEMS 10
+
+extern void UI_UpdateDatapadWeapon( void );
+
 void		UI_LoadMenus(const char *menuFile, qboolean reset);
 
 extern vmCvar_t	ui_char_color_red;
@@ -3326,6 +3335,12 @@ qboolean ItemParse_asset_model( itemDef_t *item )
 	{
 		Com_sprintf( modelPath, sizeof( modelPath ), "models/players/%s/model.glm", Cvar_VariableString ( "g_char_model" ) );
 	}
+
+	if (!Q_stricmp(temp,"cg_datapadWeaponModel") )
+	{
+		Com_sprintf( modelPath, sizeof( modelPath ), "%s", Cvar_VariableString ( "cg_datapadWeaponModel" ) );
+	}
+	
 	else
 	{
 		Com_sprintf( modelPath, sizeof( modelPath ), temp);
@@ -4266,7 +4281,6 @@ ItemParse_doubleClick
 */
 qboolean ItemParse_doubleClick(itemDef_t *item)
 {	
-	// For listbox, store in typeData
 	if (item->type == ITEM_TYPE_LISTBOX)
 	{
 		listBoxDef_t *listPtr;
@@ -4286,7 +4300,7 @@ qboolean ItemParse_doubleClick(itemDef_t *item)
 	
 		return qtrue;
 	}
-	// For other types (buttons, text, etc.), store directly in item
+
 	else
 	{
 		if (!PC_Script_Parse(&item->doubleClick))
@@ -11606,17 +11620,16 @@ void Menu_HandleKey(menuDef_t *menu, int key, qboolean down)
 	{
 		if (menu)
 		{
-			// Execute back on the first visible ownerdraw that has a back script
 			for (i = 0; i < menu->itemCount; i++)
 			{
-				itemDef_t *testItem = menu->items[i];
+				itemDef_t *item = menu->items[i];
 				
-				if (testItem->type == ITEM_TYPE_OWNERDRAW && 
-					testItem->back &&
-					!testItem->disabled &&
-					(testItem->window.flags & WINDOW_VISIBLE))
+				if (item->type == ITEM_TYPE_OWNERDRAW && 
+					item->back &&
+					!item->disabled &&
+					(item->window.flags & WINDOW_VISIBLE))
 				{
-					Item_RunScript(testItem, testItem->back);
+					Item_RunScript(item, item->back);
 					inHandler = qfalse;
 					return;
 				}
@@ -11646,6 +11659,7 @@ void Menu_HandleKey(menuDef_t *menu, int key, qboolean down)
 				else if (Q_stricmp(menu->window.name, "datapadWeaponsMenu") == 0)
 				{
 					DC->executeText(EXEC_NOW, "dpweapprev\n");
+					UI_UpdateDatapadWeapon();
 				}
 			}
 			else if (key == A_MWHEELDOWN || key == A_CURSOR_DOWN || key == A_KP_2)
@@ -11661,6 +11675,7 @@ void Menu_HandleKey(menuDef_t *menu, int key, qboolean down)
 				else if (Q_stricmp(menu->window.name, "datapadWeaponsMenu") == 0)
 				{
 					DC->executeText(EXEC_NOW, "dpweapnext\n");
+					UI_UpdateDatapadWeapon();
 				}
 			}
 			inHandler = qfalse;
@@ -11728,33 +11743,28 @@ void Menu_HandleKey(menuDef_t *menu, int key, qboolean down)
 			if (mouseX >= listboxX && mouseX <= listboxX + listboxWidth &&
 				mouseY >= listboxY && mouseY <= listboxY + listboxHeight)
 			{
-
-
-				// Check if we're clicking on an ownerdraw with doubleclick
 				for (i = 0; i < menu->itemCount; i++)
 				{
-					itemDef_t *testItem = menu->items[i];
+					itemDef_t *item = menu->items[i];
 					
-					if (testItem->type == ITEM_TYPE_OWNERDRAW)
+					if (item->type == ITEM_TYPE_OWNERDRAW)
 					{
-						if (!testItem->disabled &&
-							mouseX >= testItem->window.rect.x &&
-							mouseX <= testItem->window.rect.x + testItem->window.rect.w &&
-							mouseY >= testItem->window.rect.y &&
-							mouseY <= testItem->window.rect.y + testItem->window.rect.h &&
-							testItem->doubleClick)
+						if (!item->disabled &&
+							mouseX >= item->window.rect.x &&
+							mouseX <= item->window.rect.x + item->window.rect.w &&
+							mouseY >= item->window.rect.y &&
+							mouseY <= item->window.rect.y + item->window.rect.h &&
+							item->doubleClick)
 						{
 							
-							if (testItem->window.flags & WINDOW_VISIBLE)
+							if (item->window.flags & WINDOW_VISIBLE)
 							{
-								
-								// Check for double-click
 								if (DC->realTime < lastButtonClickTime && 
-									lastButtonClicked == testItem)
+									lastButtonClicked == item)
 								{
 									if (down && key == A_ENTER || key == A_MOUSE1)
 									{
-									Item_RunScript(testItem, testItem->doubleClick);
+									Item_RunScript(item, item->doubleClick);
 									lastButtonClickTime = 0;
 									lastButtonClicked = NULL;
 									inHandler = qfalse;
@@ -11764,14 +11774,14 @@ void Menu_HandleKey(menuDef_t *menu, int key, qboolean down)
 								else
 								{
 									lastButtonClickTime = DC->realTime + DOUBLE_CLICK_DELAY;
-									lastButtonClicked = testItem;
+									lastButtonClicked = item;
 								}
 								i = menu->itemCount; 
 							}
 
 							if (down && key == A_ENTER)
 							{
-								Item_RunScript(testItem, testItem->doubleClick);
+								Item_RunScript(item, item->doubleClick);
 							}
 						}
 					}
@@ -11781,6 +11791,73 @@ void Menu_HandleKey(menuDef_t *menu, int key, qboolean down)
 				
 				// Navigate to that item by calling dpforcenext/prev multiple times
 				DC->setCVar("ui_datapadClickedLine", va("%d", clickedLine));
+				
+				inHandler = qfalse;
+				return;
+			}
+		}
+		
+		else if (menu && Q_stricmp(menu->window.name, "datapadWeaponsMenu") == 0)
+		{
+			// Use the same constants as cg_weapons.cpp
+			const int listboxX = DATAPAD_WEAPON_LISTBOX_X;
+			const int listboxY = DATAPAD_WEAPON_LISTBOX_Y;
+			const int listboxWidth = DATAPAD_WEAPON_LISTBOX_WIDTH;
+			const int listboxHeight = DATAPAD_WEAPON_LISTBOX_HEIGHT;
+			const int lineHeight = DATAPAD_WEAPON_LISTBOX_LINEHEIGHT;
+			
+			int mouseX = (int)DC->cursorx;
+			int mouseY = (int)DC->cursory;
+			
+			if (mouseX >= listboxX && mouseX <= listboxX + listboxWidth &&
+				mouseY >= listboxY && mouseY <= listboxY + listboxHeight)
+			{
+				for (i = 0; i < menu->itemCount; i++)
+				{
+					itemDef_t *item = menu->items[i];
+					
+					if (item->type == ITEM_TYPE_OWNERDRAW)
+					{
+						if (!item->disabled &&
+							mouseX >= item->window.rect.x &&
+							mouseX <= item->window.rect.x + item->window.rect.w &&
+							mouseY >= item->window.rect.y &&
+							mouseY <= item->window.rect.y + item->window.rect.h &&
+							item->doubleClick)
+						{
+							if (item->window.flags & WINDOW_VISIBLE)
+							{
+								if (DC->realTime < lastButtonClickTime && 
+									lastButtonClicked == item)
+								{
+									if (down && (key == A_ENTER || key == A_MOUSE1))
+									{
+										Item_RunScript(item, item->doubleClick);
+										lastButtonClickTime = 0;
+										lastButtonClicked = NULL;
+										inHandler = qfalse;
+										return;
+									}
+								}
+								else
+								{
+									lastButtonClickTime = DC->realTime + DOUBLE_CLICK_DELAY;
+									lastButtonClicked = item;
+								}
+								i = menu->itemCount;
+							}
+							
+							if (down && key == A_ENTER)
+							{
+								Item_RunScript(item, item->doubleClick);
+							}
+						}
+					}
+				}
+				
+				int clickedLine = (mouseY - listboxY) / lineHeight;
+				
+				DC->setCVar("ui_datapadWeaponClickedLine", va("%d", clickedLine));
 				
 				inHandler = qfalse;
 				return;

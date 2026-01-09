@@ -93,6 +93,7 @@ void CG_DrawDataPadIconBackground(const int backgroundType);
 void CG_DrawDataPadWeaponSelect( void );
 void CG_DrawDataPadForceSelect( void );
 void CG_DrawDataPadForceInventory( void);
+void CG_DrawDataPadWeaponInventory( void );
 
 /*
 ================
@@ -188,6 +189,14 @@ Ghoul2 Insert End
 			CG_DrawDataPadIconBackground(ICON_FORCE);
 			CG_DrawDataPadForceInventory();
 		}
+		return 0;
+	case CG_DRAW_DATAPAD_WEAPONINVENTORY:
+		if (cg.snap)
+		{
+			CG_DrawDataPadIconBackground(ICON_WEAPONS);
+			CG_DrawDataPadWeaponInventory();
+		}
+		return 0;
 	}
 	return -1;
 }
@@ -4312,7 +4321,7 @@ static vmCvar_t ui_datapadClickedLine;
 static vmCvar_t ui_datapadSelectedPowerID;  // Stores the actual force power ID for menu use
 
 // Listbox dimensions - THESE MUST MATCH IN BOTH DRAW AND UI CODE
-#define DATAPAD_LISTBOX_X 70
+#define DATAPAD_LISTBOX_X_VAR 70
 #define DATAPAD_LISTBOX_Y 110
 #define DATAPAD_LISTBOX_WIDTH 500
 #define DATAPAD_LISTBOX_HEIGHT 250
@@ -4387,7 +4396,7 @@ CG_DrawDataPadForceInventory
 */
 void CG_DrawDataPadForceInventory()
 {
-	const int startX = DATAPAD_LISTBOX_X;
+	const int startX = DATAPAD_LISTBOX_X_VAR;
 	const int startY = DATAPAD_LISTBOX_Y;
 	const int lineHeight = DATAPAD_LISTBOX_LINEHEIGHT;
 	constexpr float textScale = 0.7f;
