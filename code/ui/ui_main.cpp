@@ -411,6 +411,8 @@ vmCvar_t	ui_scrollhidden;
 vmCvar_t	ui_datapadSelectedPowerID;
 vmCvar_t	cg_datapadWeaponModel;
 
+vmCvar_t	ui_char_model_angle;
+
 static void UI_UpdateScreenshot( void )
 {
 	qboolean changed = qfalse;
@@ -477,6 +479,8 @@ static cvarTable_t cvarTable[] =
 	{ &ui_scrollhidden,			"ui_scrollhidden",		"1", NULL, 0},
 	{ &ui_datapadSelectedPowerID, "ui_datapadSelectedPowerID", "0", NULL, 0},
 	{ &cg_datapadWeaponModel,	"cg_datapadWeaponModel", "models/weapons2/saber/saber_w.glm", NULL, 0},
+
+	{ &ui_char_model_angle, 	"ui_char_model_angle", "180", NULL, 0},
 };
 
 #define FP_UPDATED_NONE -1
