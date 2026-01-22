@@ -1680,49 +1680,6 @@ void CG_DrawDataPadWeaponInventory()
 		}
 	}
 	
-	// Apply the concussion rifle ordering hack to match CG_DPNextWeapon_f navigation
-	// This reorders the array so Concussion (13) appears between Flechette (8) and Rocket Launcher (9)
-	if (totalValidWeapons > 0)
-	{
-		// Find indices of the weapons involved in the hack
-		int flechetteIdx = -1;
-		int concussionIdx = -1;
-		
-		for (int i = 0; i < totalValidWeapons; i++)
-		{
-			if (validWeapons[i] == WP_FLECHETTE)
-			{
-				flechetteIdx = i;
-			}
-			else if (validWeapons[i] == WP_CONCUSSION)
-			{
-				concussionIdx = i;
-			}
-		}
-		
-		// If both weapons exist and concussion is not already after flechette, reorder
-		if (flechetteIdx != -1 && concussionIdx != -1 && concussionIdx != flechetteIdx + 1)
-		{
-			// Store the concussion weapon ID
-			int concussionWeapon = validWeapons[concussionIdx];
-			
-			// Remove concussion from its current position
-			for (int i = concussionIdx; i < totalValidWeapons - 1; i++)
-			{
-				validWeapons[i] = validWeapons[i + 1];
-			}
-			
-			// Shift everything after flechette down one spot
-			for (int i = totalValidWeapons - 1; i > flechetteIdx + 1; i--)
-			{
-				validWeapons[i] = validWeapons[i - 1];
-			}
-			
-			// Insert concussion right after flechette
-			validWeapons[flechetteIdx + 1] = concussionWeapon;
-		}
-	}
-	
 	if (totalValidWeapons == 0)
 	{
 		cgi_R_SetColor(colorTable[CT_WHITE]);
@@ -2500,24 +2457,9 @@ void CG_DPNextWeapon_f( void ) {
 	for ( i = 0 ; i <= MAX_PLAYER_WEAPONS ; i++ )
 	{
 
-		//*SIGH*... Hack to put concussion rifle before rocketlauncher
-		if ( cg.DataPadWeaponSelect == WP_FLECHETTE )
-		{
-			cg.DataPadWeaponSelect = WP_CONCUSSION;
-		}
-		else if ( cg.DataPadWeaponSelect == WP_CONCUSSION )
-		{
-			cg.DataPadWeaponSelect = WP_ROCKET_LAUNCHER;
-		}
-		else if ( cg.DataPadWeaponSelect == WP_DET_PACK )
-		{
-			cg.DataPadWeaponSelect = FIRST_WEAPON;
-		}
-		else
-		{
-			cg.DataPadWeaponSelect++;
-			CG_UpdateDataPadWeaponCvar();
-		}
+		//Concussion Rifle Hack Removed
+		cg.DataPadWeaponSelect++;
+		CG_UpdateDataPadWeaponCvar();
 
 		if ( cg.DataPadWeaponSelect < FIRST_WEAPON || cg.DataPadWeaponSelect > MAX_PLAYER_WEAPONS) {
 			cg.DataPadWeaponSelect = FIRST_WEAPON;
@@ -2559,24 +2501,9 @@ void CG_DPPrevWeapon_f( void )
 	for ( i = 0 ; i <= MAX_PLAYER_WEAPONS ; i++ )
 	{
 
-		//*SIGH*... Hack to put concussion rifle before rocketlauncher
-		if ( cg.DataPadWeaponSelect == WP_ROCKET_LAUNCHER )
-		{
-			cg.DataPadWeaponSelect = WP_CONCUSSION;
-		}
-		else if ( cg.DataPadWeaponSelect == WP_CONCUSSION )
-		{
-			cg.DataPadWeaponSelect = WP_FLECHETTE;
-		}
-		else if ( cg.DataPadWeaponSelect == WP_MELEE )
-		{
-			cg.DataPadWeaponSelect = WP_DET_PACK;
-		}
-		else
-		{
-			cg.DataPadWeaponSelect--;
-			CG_UpdateDataPadWeaponCvar();
-		}
+		//Concussion Rifle Hack Removed
+		cg.DataPadWeaponSelect--;
+		CG_UpdateDataPadWeaponCvar();
 
 		if ( cg.DataPadWeaponSelect < FIRST_WEAPON || cg.DataPadWeaponSelect > MAX_PLAYER_WEAPONS)
 		{
