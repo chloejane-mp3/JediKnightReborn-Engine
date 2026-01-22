@@ -412,6 +412,7 @@ vmCvar_t	ui_datapadSelectedPowerID;
 vmCvar_t	cg_datapadWeaponModel;
 
 vmCvar_t	ui_char_model_angle;
+vmCvar_t	ui_weapon_model_angle;
 
 static void UI_UpdateScreenshot( void )
 {
@@ -481,6 +482,7 @@ static cvarTable_t cvarTable[] =
 	{ &cg_datapadWeaponModel,	"cg_datapadWeaponModel", "models/weapons2/saber/saber_w.glm", NULL, 0},
 
 	{ &ui_char_model_angle, 	"ui_char_model_angle", "180", NULL, 0},
+	{ &ui_weapon_model_angle, 	"ui_weapon_model_angle", "90", NULL, 0},
 };
 
 #define FP_UPDATED_NONE -1

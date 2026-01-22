@@ -64,6 +64,7 @@ extern vmCvar_t	ui_char_color_green;
 extern vmCvar_t	ui_char_color_blue;
 
 extern vmCvar_t ui_char_model_angle;
+extern vmCvar_t ui_weapon_model_angle;
 
 void *UI_Alloc( int size );
 
