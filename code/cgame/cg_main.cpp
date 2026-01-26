@@ -4619,6 +4619,7 @@ int CG_MagicFontToReal( int menuFontIndex )
 	static int fonthandle_ergoec;
 	static int fonthandle_anewhope;
 	static int fonthandle_arialnb;
+	static int fonthandle_adventorbold;
 
 	static qboolean fontsRegistered = qfalse;
 
@@ -4628,6 +4629,7 @@ int CG_MagicFontToReal( int menuFontIndex )
 		fonthandle_ergoec   = cgi_R_RegisterFont( "ergoec" );
 		fonthandle_anewhope = cgi_R_RegisterFont( "anewhope" );
 		fonthandle_arialnb  = cgi_R_RegisterFont( "arialnb" );
+		fonthandle_adventorbold = cgi_R_RegisterFont( "adventorbold" );
 
 		fontsRegistered = qtrue;
 	}
@@ -4638,6 +4640,7 @@ int CG_MagicFontToReal( int menuFontIndex )
 		case 2: return fonthandle_ergoec;
 		case 3: return fonthandle_anewhope;
 		case 4: return fonthandle_arialnb;
+		case 5: return fonthandle_adventorbold;
 
 		default:
 			return cgs.media.qhFontMedium;
