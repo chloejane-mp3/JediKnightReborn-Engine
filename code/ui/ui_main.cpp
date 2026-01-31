@@ -482,7 +482,7 @@ static cvarTable_t cvarTable[] =
 	{ &cg_datapadWeaponModel,	"cg_datapadWeaponModel", "models/weapons2/saber/saber_w.glm", NULL, 0},
 
 	{ &ui_char_model_angle, 	"ui_char_model_angle", "180", NULL, 0},
-	{ &ui_weapon_model_angle, 	"ui_weapon_model_angle", "90", NULL, 0},
+	{ &ui_weapon_model_angle, 	"ui_weapon_model_angle", "270", NULL, 0},
 };
 
 #define FP_UPDATED_NONE -1
