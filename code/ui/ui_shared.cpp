@@ -8691,7 +8691,6 @@ static qboolean Item_Paint(itemDef_t *item, qboolean bDraw)
 			Item_MultiSettings_Paint(item);
 			break;
 		case ITEM_TYPE_SLIDER_ROTATE:
-			Item_Slider_Paint(item);
 			break;
 		default:
 			break;
