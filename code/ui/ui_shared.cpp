@@ -11872,6 +11872,19 @@ void Menu_HandleKey(menuDef_t *menu, int key, qboolean down)
 	{
 		if (menu && Q_stricmp(menu->window.name, "datapadForcePowersMenu") == 0)
 		{
+			qboolean forceListVisible = qfalse;
+			itemDef_t *forceListItem = NULL;
+			for (i = 0; i < menu->itemCount; i++)
+			{
+				itemDef_t *item = menu->items[i];
+				if (item->type == ITEM_TYPE_OWNERDRAW && item->window.ownerDraw == 257 && (item->window.flags & WINDOW_VISIBLE))
+				{
+					forceListVisible = qtrue;
+					forceListItem = item;
+					break;
+				}
+			}
+
 			// Use the same constants as cg_main.cpp
 			const int listboxX = DATAPAD_LISTBOX_X;
 			const int listboxY = DATAPAD_LISTBOX_Y;
@@ -11882,50 +11895,32 @@ void Menu_HandleKey(menuDef_t *menu, int key, qboolean down)
 			int mouseX = (int)DC->cursorx;
 			int mouseY = (int)DC->cursory;
 			
-			if (mouseX >= listboxX && mouseX <= listboxX + listboxWidth &&
+			if (forceListVisible &&
+				mouseX >= listboxX && mouseX <= listboxX + listboxWidth &&
 				mouseY >= listboxY && mouseY <= listboxY + listboxHeight)
 			{
-				for (i = 0; i < menu->itemCount; i++)
+				if (forceListItem && forceListItem->doubleClick && !forceListItem->disabled)
 				{
-					itemDef_t *item = menu->items[i];
-					
-					if (item->type == ITEM_TYPE_OWNERDRAW)
+					if (DC->realTime < lastButtonClickTime && lastButtonClicked == forceListItem)
 					{
-						if (!item->disabled &&
-							mouseX >= item->window.rect.x &&
-							mouseX <= item->window.rect.x + item->window.rect.w &&
-							mouseY >= item->window.rect.y &&
-							mouseY <= item->window.rect.y + item->window.rect.h &&
-							item->doubleClick)
+						if (down && (key == A_ENTER || key == A_MOUSE1))
 						{
-							
-							if (item->window.flags & WINDOW_VISIBLE)
-							{
-								if (DC->realTime < lastButtonClickTime && 
-									lastButtonClicked == item)
-								{
-									if (down && key == A_ENTER || key == A_MOUSE1)
-									{
-									Item_RunScript(item, item->doubleClick);
-									lastButtonClickTime = 0;
-									lastButtonClicked = NULL;
-									inHandler = qfalse;
-									return;
-									}
-								}
-								else
-								{
-									lastButtonClickTime = DC->realTime + DOUBLE_CLICK_DELAY;
-									lastButtonClicked = item;
-								}
-								i = menu->itemCount; 
-							}
-
-							if (down && key == A_ENTER)
-							{
-								Item_RunScript(item, item->doubleClick);
-							}
+							Item_RunScript(forceListItem, forceListItem->doubleClick);
+							lastButtonClickTime = 0;
+							lastButtonClicked = NULL;
+							inHandler = qfalse;
+							return;
 						}
+					}
+					else
+					{
+						lastButtonClickTime = DC->realTime + DOUBLE_CLICK_DELAY;
+						lastButtonClicked = forceListItem;
+					}
+
+					if (down && key == A_ENTER)
+					{
+						Item_RunScript(forceListItem, forceListItem->doubleClick);
 					}
 				}
 				
@@ -11941,6 +11936,19 @@ void Menu_HandleKey(menuDef_t *menu, int key, qboolean down)
 		
 		else if (menu && Q_stricmp(menu->window.name, "datapadWeaponsMenu") == 0)
 		{
+			qboolean weaponListVisible = qfalse;
+			itemDef_t *weaponListItem = NULL;
+			for (i = 0; i < menu->itemCount; i++)
+			{
+				itemDef_t *item = menu->items[i];
+				if (item->type == ITEM_TYPE_OWNERDRAW && item->window.ownerDraw == 258 && (item->window.flags & WINDOW_VISIBLE))
+				{
+					weaponListVisible = qtrue;
+					weaponListItem = item;
+					break;
+				}
+			}
+
 			// Use the same constants as cg_weapons.cpp
 			const int listboxX = DATAPAD_WEAPON_LISTBOX_X;
 			const int listboxY = DATAPAD_WEAPON_LISTBOX_Y;
@@ -11951,49 +11959,32 @@ void Menu_HandleKey(menuDef_t *menu, int key, qboolean down)
 			int mouseX = (int)DC->cursorx;
 			int mouseY = (int)DC->cursory;
 			
-			if (mouseX >= listboxX && mouseX <= listboxX + listboxWidth &&
+			if (weaponListVisible &&
+				mouseX >= listboxX && mouseX <= listboxX + listboxWidth &&
 				mouseY >= listboxY && mouseY <= listboxY + listboxHeight)
 			{
-				for (i = 0; i < menu->itemCount; i++)
+				if (weaponListItem && weaponListItem->doubleClick && !weaponListItem->disabled)
 				{
-					itemDef_t *item = menu->items[i];
-					
-					if (item->type == ITEM_TYPE_OWNERDRAW)
+					if (DC->realTime < lastButtonClickTime && lastButtonClicked == weaponListItem)
 					{
-						if (!item->disabled &&
-							mouseX >= item->window.rect.x &&
-							mouseX <= item->window.rect.x + item->window.rect.w &&
-							mouseY >= item->window.rect.y &&
-							mouseY <= item->window.rect.y + item->window.rect.h &&
-							item->doubleClick)
+						if (down && (key == A_ENTER || key == A_MOUSE1))
 						{
-							if (item->window.flags & WINDOW_VISIBLE)
-							{
-								if (DC->realTime < lastButtonClickTime && 
-									lastButtonClicked == item)
-								{
-									if (down && (key == A_ENTER || key == A_MOUSE1))
-									{
-										Item_RunScript(item, item->doubleClick);
-										lastButtonClickTime = 0;
-										lastButtonClicked = NULL;
-										inHandler = qfalse;
-										return;
-									}
-								}
-								else
-								{
-									lastButtonClickTime = DC->realTime + DOUBLE_CLICK_DELAY;
-									lastButtonClicked = item;
-								}
-								i = menu->itemCount;
-							}
-							
-							if (down && key == A_ENTER)
-							{
-								Item_RunScript(item, item->doubleClick);
-							}
+							Item_RunScript(weaponListItem, weaponListItem->doubleClick);
+							lastButtonClickTime = 0;
+							lastButtonClicked = NULL;
+							inHandler = qfalse;
+							return;
 						}
+					}
+					else
+					{
+						lastButtonClickTime = DC->realTime + DOUBLE_CLICK_DELAY;
+						lastButtonClicked = weaponListItem;
+					}
+
+					if (down && key == A_ENTER)
+					{
+						Item_RunScript(weaponListItem, weaponListItem->doubleClick);
 					}
 				}
 				
